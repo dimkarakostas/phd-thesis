@@ -1,0 +1,12 @@
+*.aux
+*.log
+*.bbl
+*.blg
+*.swp
+*.synctex.gz
+.DS_Store
+*.out
+*.toc
+thesis.pdf
+*.pdfsync
+*.pyc
