@@ -1,0 +1,81 @@
+\section{Product evaluation}\label{sec:evaluation}
+
+The evaluation of commercial hardware wallet products was performed on September 2018.
+At that time, the hardware wallets suggested by
+\href{https://bitcoin.org/}{bitcoin.org} were Digital Bitbox, KeepKey, Ledger,
+and Trezor. The latter $3$ had an embedded screen to present information to the
+user, so we focus on them. We manually inspected these wallets, identified
+their protocols, and mapped them to our model.
+
+These implementations bare significant similarities to
+each other and our model. Although the wallets did have different low-level
+implementations, the protocols that they execute are captured by the hybrid
+setting of Section~\ref{sec:hybrid-protocol}. This similarity, between our
+model and the actual implementations, reaffirmed the correctness of previous
+empirical studies, which suggest that the Ledger wallets are prone to the
+payment~\cite{ISC:GkaAraKia17} and address generation~\cite{receiveAttack}
+attacks. The wallets were subject to these attacks when the client is dishonest
+and secure only if the cryptographic primitives are secure \emph{and} the user
+does not deviate from the defined protocol, \ie successfully identifies
+tampered data. Moreover, the instantiation of our model to the three
+implementations suggests that the wallets were prone to chain attacks, as
+discussed in Section~\ref{sec:theorem}.
+
+For each implementation we focused on the two core wallet operations:
+\emph{address generation} and \emph{transaction issuing}. Since all
+implementations were susceptible to chain attacks, we focused on the viability
+of payment and address attacks in each case. We showed that Trezor and KeepKey
+were secure against payment and address attacks, as long as the user follows
+the protocol and verifies the data, whereas Ledger wallets were prone to
+address attacks, due to divergence from our model. We expect this type of
+evaluation to become an industry standard for hardware wallets, so that vendors
+can improve the security and performance of their products by employing formal
+verification methods, instead of empirical techniques.
+
+\paragraph{Trezor and KeepKey}
+We investigated the implementation of the Trezor Model T and KeepKey hardware
+wallets. Both products are implemented similarly, so we focused only on Trezor.
+Trezor provides a touch screen for both displaying information and receiving
+input from the user. Based on the developer's guide~\cite{trezor-dev}, we next
+describe an abstraction of Trezor's behavior under our model.
+During address generation, Trezor requires that the user connects the token to
+the client and unlocks it, \ie the user \emph{initiates a session} similar to
+our model definition. The client then retrieves the address from the hardware
+token and displays it to the user. The hardware also displays the address, as
+long as the ``Show on Trezor'' option is enabled. If this option is disabled,
+then the user cannot verify the client's address and is prone to an address
+attack, \ie the client might display a malicious address which the user cannot
+cross-check with the hardware wallet. However, the user manual does urge the
+user to always check the two addresses~\cite{trezor-user} to avoid such attack
+scenarios.
+During transaction issuing, the user again connects the device to the client
+and unlocks it. Then they initiate a transaction by giving to the client the
+recipient's address, and the payment and fee amounts, similarly to our hybrid
+model setting. The client initiates the transaction signing process with the
+hardware by providing this data, which the token then displays to the user for
+verification. After the user has verified the transaction, the hardware
+communicates with the client and signs the needed data. Again, given our high
+level investigation, this process matches the communication steps that our
+model describes.
+
+\paragraph{Ledger}
+We investigate the implementation of Ledger Nano S according to the user
+manual~\cite{ledger-manual} and our own analysis. Like Trezor, before
+performing any operation the user is required to initiate a session by
+connecting the hardware to the client and unlocking it. The hardware provides a
+small screen for displaying information and a pair of two buttons for receiving
+commands from the user.
+During address generation, the client displays the newly generated address to
+the user. However, there is no option for the hardware wallet to also display
+the address,\footnote{Ledger issued a firmware update to address this issue
+and allow both the client and the hardware to generate and display the address;
+however, the update process is manual and often
+neglected by users.} so that the user can cross-check and verify the
+two. This is a clear divergence from our model and allows for address attacks,
+\eg by a corrupted client that displays a malicious address to the user.
+Transaction issuing is also similar to Trezor and captured by our model. The
+user inputs the transaction's data to the client, \ie the recipient's address
+and the payment and fee amounts. The client forwards this data to the hardware,
+which displays it to the user for verification. After receiving the user's
+confirmation, the hardware interacts with the client to sign and publish the
+transaction on the blockchain.

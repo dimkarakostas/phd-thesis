@@ -1,0 +1,44 @@
+Both PoW and PoS ledgers are economies of scale, favoring parties with large
+amounts of participating power. One reason is poorly-designed incentives,
+resulting in disproportionate power
+accumulation~\cite{karakostas2019cryptocurrency,FC:FKORVW19}. Another is
+temporal discounting, \ie the tendency to disfavor rare or delayed
+rewards~\cite{Reed2011}. Specifically, in Bitcoin, a party is rewarded for
+every block it produces, so parties with insignificant amounts of power are
+rarely rewarded. In contrast, accumulating the power of multiple small parties
+in ``pools'' yields a steadier reward.
+
+As a result, these systems often see the formation of collaborative entities of
+participants. In PoW systems, this takes the form of mining
+pools.\footnote{$86$\% of Bitcoin's hashing power and $83$\% of Ethereum's
+hashing power are controlled by $5$ entities each.
+(\url{https://miningpools.com}; May 2021)} Similarly, PoS systems often opt for
+stake pools, \ie collaborative entities comprising of multiple stakeholders,
+which allow a party to earn rewards more regularly, compared to participating
+on an individual basis.  Particularly in PoS, delegation to stake pools is
+often preferred over ``pure'' PoS, where parties act independently, as the
+ledger's performance and security is often better under fewer participants. For
+instance, PoS systems require participants to be constantly online, since
+abstaining is a security hazard; this requirement is more easily guaranteed
+within a small set of dedicated delegates.
+
+However, a major drawback of existing stake pool designs, including our scheme
+of Chapter~\ref{chap:delegation}, is that they are typically managed by a
+single party, \ie the pool operator. This party participates in consensus,
+claims the rewards offered by the system, and then distributes them among the
+pool's members (after subtracting a fee). However, the operator is a single
+point of failure. In this chapter, we extend the results of
+Chapter~\ref{chap:delegation} by exploring a design which allows players to
+jointly form a \emph{collective pool}, \ie a conclave. This design assumes no
+single operator, minimizing excess fees, and trust and security concerns,
+altogether. Collective stake pools also promote a more fair and decentralized
+environment. In existing incentive
+schemes~\cite{DBLP:conf/eurosp/BrunjesKKS20}, operators who can pledge large
+amounts of stake to the pool are preferred. Consequently, the system favors a
+few major pool operators and, in the long run, its wealth is concentrated
+around them, resulting in a ``rich get richer'' situation. Although this
+problem is inherent in all decentralized financial
+systems~\cite{karakostas2019cryptocurrency}, a well-designed collective pool
+may offset the stakeholder imbalance and slightly decelerate this tendency.
+Especially in PoS systems, a well-designed pool mechanism can prevent attacks
+observed on PoW~\cite{FCW:JLGVM14,FC:WalCli14,FCW:LasJohGro15}.

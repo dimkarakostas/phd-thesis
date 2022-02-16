@@ -1,0 +1,39 @@
+Distributed ledgers implement a storage layer, on top of which a shared state
+is maintained in a decentralized manner. In ledger systems, this state
+consists of three objects:
+\begin{inparaenum}[i)]
+    \item the public ledger, \ie the list of transactions which form the
+        system's history;
+    \item the mempool, \ie the set of, yet unpublished, transactions;
+    \item the active state which, in systems like Bitcoin, consists of the UTxO
+        set.
+\end{inparaenum}
+To support thousands (or millions) of participants, a decentralized system's
+state management should be well-designed, primarily focused on minimizing the
+shared state. Our work focuses on the third type, as poorly designed management
+often leads to performance issues and even Denial-of-Service (DoS) attacks. In
+Ethereum, during a 2016 DoS attack, an attacker added 18 million accounts to
+the state, increasing its size by 18 times~\cite{ethereum-dos}. Bitcoin saw
+similar spam attacks in 2013~\cite{FCW:VasThoMoo14} and
+2015~\cite{bitcoin-flooding}, when millions of outputs were added to the UTxO
+set.
+
+Mining nodes and full nodes incur costs for maintaining the shared state in the
+Bitcoin network. This cost pertains to the resources (\ie CPU, disk, network
+bandwidth, memory) that are consumed with every transaction transmitted,
+validated, and stored. An expensive part of a transaction is the newly created
+outputs, which are added to the in-memory UTxO set. As the system's scale
+increases, the cost of maintaining the UTxO set gradually leads to a
+shared-state bloat, which makes the cost of running a full node prohibiting.
+
+Moreover, the system's incentives, which are promoted via transaction fees,
+only deteriorate the problem. For example, assume two transactions $\tx_A$ and
+$\tx_B$: $\tx_A$ spends $5$ inputs and creates $1$ output, while $\tx_B$ spends
+$1$ input and creates $2$ outputs. Assuming the size of a UTxO is equal to the
+size of consuming it (200 bytes) and that transaction fees are $30$ satoshi per
+byte, $\tx_A$ costs $30 \times 200 \times (5+1) =  36000$ satoshi and $\tx_B$
+costs $30 \times 200 \times (1+2) = 18000$ satoshi. Although $\tx_B$ burdens
+the UTxO set by creating a net delta of ($2 - 1 = 1$) new UTxO, while $\tx_A$
+reduces the shared state by consuming ($1 - 5 = -4$) UTxOs, $\tx_B$ is cheaper
+in terms of fees. Clearly, the existing fee scheme penalizes the consumption of
+multiple inputs, disincentivizing minimizing the shared state.

@@ -1,0 +1,111 @@
+\section{Blockchain Protocols}\label{sec:blockchains}
+
+In this work, we focus on blockchain-based distributed ledger protocols.  In
+the general case, a ledger defines a global state, which is distributed across
+multiple parties and is maintained via a consensus protocol. The distributed
+ledger protocol defines the validity rules which allow a party to extract the
+final ledger from its view. A
+blockchain is a distributed database, where each message $\mesg$ is a block
+$\block$ of transactions and each transaction updates the system's global
+state. Therefore, at any point of the execution, a party $\party$ holds some view of
+the global state, which comprises of the blocks that $\party$ has
+adopted. We note that, if at least one valid block is diffused (\wrt the
+validity rules of the protocol), then every honest party can
+extract a final ledger from its execution view.
+
+\subsection{The Setting}\label{subsec:setting}
+
+Every blockchain protocol $\proto$ defines a \emph{message validity} predicate
+$\messageValidityPredicate$.  A party $\party$ accepts a block $\block$,
+received during a slot $\slot$ of the execution, if it holds that
+$\messageValidityPredicate(\executionTrace^{\party}_\slot, \block) = 1$. For
+example, in Proof-of-WorK (PoW) systems like
+Bitcoin~\cite{nakamoto2008bitcoin}, a block is valid if its hash is below a
+certain threshold, while in Proof-of-Stake (PoS) protocols like
+Ouroboros~\cite{C:KRDO17}, a block is valid if it has been created by a
+specific party, according to a well-known leader schedule. In all cases, a
+block $\block$ is valid only if the party that creates it submits a query for
+$\block$ to the oracle $\oracle_\proto$ beforehand.
+
+Each block $\block$ is associated with the following metadata:
+\begin{inparaenum}[i)]
+    \item an index $\mathit{index}(\block)$;
+    \item the party $\mathit{creator}(\block)$ that created $\block$;
+    \item a set $\mathit{ancestors}(\block) \subseteq
+    \executionTrace^{\mathit{creator}(\block)}$, \ie blocks in the view of
+    $\mathit{creator}(\block)$ (at the time of $\block$'s creation)
+    referenced by $\block$.
+\end{inparaenum}
+
+\noindent Message references are implemented as hash pointers, given a hash function
+$\hash$ employed by the protocol. Specifically, each block $\block$ contains the
+hash of all blocks in the referenced blocks $\mathit{ancestors}(\block)$.
+Blockchain systems
+are typically bootstrapped via a global common reference string, \ie a
+``genesis'' block $\genesis$.
+Therefore, the blocks form a hash tree, stemming from $\genesis$.
+$\mathit{index}(\block)$ is the height of $\block$ in the hash tree. If
+$\block$ references multiple messages, \ie belongs to multiple tree branches,
+$\mathit{index}(\block)$ is the height of the longest one.
+
+The protocol also defines the \emph{message equivalency operator}, $\equiv$. Specifically, two messages are equivalent if
+their hashes match, \ie $\mesg_1 \equiv \mesg_2 \Leftrightarrow \hash(\mesg_1) =
+\hash(\mesg_2)$. At a high level, two equivalent messages are
+interchangeable by the protocol.
+
+\paragraph{Infraction Predicate}\label{sec:blockchain-infraction-predicate}
+In our analysis of blockchain systems, we consider two types of deviant
+behavior (Definition~\ref{def:blockchain-infraction}):
+\begin{inparaenum}[i)]
+    \item creating conflicting valid messages,
+    \item abstaining.
+\end{inparaenum}
+We choose these predicates because they may lead to non-compliance in
+interesting use cases. For the former, conflicting valid messages, \ie chain
+forks, are the primary reason for failure to achieve consensus, so exploring
+when a party is incentivized to initiate a fork is particularly interesting.
+For the latter, increased and continuous participation typically helps the
+safety of deployed systems, as motivating more users to participate in a
+compliant manner increases the level of power that an adversary needs to reach
+in order to break a system's security.
+
+\begin{definition}[Blockchain Infraction Predicate]\label{def:blockchain-infraction}
+    Given a party $\party$ and an execution trace $\executionTrace_{\env, \sigma, \slot}$,
+    we define the following infraction predicates:
+    \begin{enumerate}
+        \item
+            \emph{conflicting predicate}: $\infractionPredicate_{conf}(\executionTrace_{\env, \sigma, \slot}, \party) = 1$ if
+            $\exists \block, \block'
+            \in \executionTrace_{\env, \sigma, \slot}:\messageValidityPredicate(\executionTrace_{\env, \sigma, \slot}^{\party}, \block)=\messageValidityPredicate(\executionTrace_{\env, \sigma, \slot}^{\party}, \block')=1\land
+            \mathit{index}(\block) = \mathit{index}(\block') \land \block \not \equiv
+            \block' \land \mathit{creator}(\block) = \mathit{creator}(\block') = \party$;
+        \item
+            \emph{abstaining predicate}: $\infractionPredicate_{abs}(\executionTrace_{\env, \sigma, \slot}, \party) = 1$ if
+            $\party$ makes \emph{no} queries to the oracle $\oracle_\proto$
+            during slot $\slot$;
+        \item
+            \emph{blockchain predicate}: $\infractionPredicate_{bc}(\executionTrace_{\env, \sigma, \slot}, \party) = 1$ if it holds
+            $(\infractionPredicate_{conf}(\executionTrace_{\env, \sigma, \slot}, \party) = 1) \lor (\infractionPredicate_{abs}(\executionTrace_{\env, \sigma, \slot}, \party) = 1)$.
+    \end{enumerate}
+\end{definition}
+
+\begin{remark*}
+Preventing conflicting messages is not the same
+as resilience against sybil attacks~\cite{douceur2002sybil}. Sybil resilience
+mechanisms restrict an attacker from creating multiple identities, in order to
+participate in a distributed system. In comparison, our infraction predicate
+ensures that a user does not increase their utility by violating the infraction
+conditions for each identity they control. Therefore, a system may be compliant
+but not sybil resilient, \eg if a party can participate via multiple identities
+but it cannot increase its utility by producing conflicting messages, and vice
+versa.
+\end{remark*}
+
+Finally, at the end of the execution, the observer $\observer$ outputs a chain
+$\chain_{\observer, \executionTrace}$. Typically, this is the longest valid chain, \ie the longest
+branch of the tree that stems from genesis $\genesis$.\footnote{For simplicity we assume that the longest chain (in terms of
+blocks) also contains the most hashing power, which is the metric used in PoW
+systems like Bitcoin.} In case multiple longest chains exist, a choice is made
+either at random or following a chronological ordering of messages. The number
+of messages in $\chain_{\observer, \executionTrace}$ that are created by a party $\party$ is
+denoted by $\msgOutputSet_{\party, \executionTrace}$.

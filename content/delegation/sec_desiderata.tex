@@ -1,0 +1,81 @@
+\section{General Desiderata}\label{sec:desiderata-delegation}
+
+Before presenting our framework, we first identify the properties that the
+wallet in a PoS setting should offer. This investigation is an important step
+in understanding the restrictions in designing such systems, as well as
+evaluating the choices that a PoS protocol's designer should make. We organize
+the desiderata in three basic categories, based on the related system
+component.
+
+\paragraph{Addresses and Attributes}\label{subsec:address-desiderata}
+In a PoS system, each account manages a set of addresses. These addresses own a
+non-negative amount of cryptocurrency assets and may contain various account
+metadata. Any PoS system should offer at minimum two basic operations for each
+user's account:
+\begin{inparaenum}[i)]
+    \item \emph{paying} and
+    \item \emph{staking}.
+\end{inparaenum}
+Addresses, simply put, are strings which have cryptocurrency balances
+associated with them. They may also contain metadata, in the form of arbitrary
+attributes, which are useful for various system operations. We identify the
+following desiderata for addresses in a PoS setting:
+\begin{itemize}
+    \item \emph{Address Non-malleability}: assuming access to an address and
+        the ledger, an adversary should not be able to construct a different
+        address that shares \emph{only some} of the address's attributes;
+    \item \emph{Address Uniqueness}: any two addresses with different
+        attributes should be distinct;
+    \item \emph{Short Addresses}: addresses should be relatively short (in
+        order to be usable and storage efficient);
+    \item \emph{Multiple Types of Addresses}: construction of more than one
+        type of addresses should be allowed, with each type supporting a
+        different subset of basic operations (\eg to ban some addresses from
+        participating in consensus);
+    \item \emph{Multiple Device Support}: an account should be able to exist on
+        multiple devices that share \emph{no joint internal state};
+    \item \emph{Address Recovery}: an account should be able to identify its
+        addresses, assuming access to the ledger and the payment keys which it
+        controls;
+    \item \emph{Privacy and unlinkability:} addresses should be
+        indistinguishable from one another and not publicly-linkable to their
+        account.
+\end{itemize}
+
+\paragraph{Basic Account Operations}
+The two basic types of operations, \ie \emph{payment} and \emph{staking}, can
+be performed independently by two separate pieces of information, denoted by
+$\accPay$ and $\accSta$. The main advantage of this approach is that $\accPay$ is
+reserved only for transferring funds, while staking operations require access
+only to $\accSta$.  Another desirable result is the ability to recover all
+addresses given a master key, \eg as implemented by HD
+Wallets~\cite{CCS:DasFauLos19,FC:GutSte15,bip32}; this feature is particularly
+important in case the equipment which hosts the wallet is lost. We summarize
+the above, with some additions, as follows:
+\begin{itemize}
+    \item \emph{Account Master Key:} there should exist a ``master'' piece of
+        information, \eg a master seed, that can be used to generate all of the
+        account's management information, \ie its keys;
+    \item \emph{Staking and Payment Separation:} compromising the staking
+        operations should not affect the payment operations (and vice-versa);
+    \item \emph{Payment Key Information Safety:} apart from a cryptographic
+        hash, no other information about the payment key $\accPay$ should be
+        public prior to issuing a payment;
+    \item \emph{Key Exposure Mitigation:} ownership of the account's assets and
+        staking ability should be recoverable, in case the staking information
+        $\accSta$ is compromised.
+\end{itemize}
+
+\paragraph{Delegation Mechanism and Stake Pools}
+Delegation depends on the ability of a user to give the rights over her stake
+to another user. This action should be distinguishable from other actions, like
+payment, in order to protect the users and facilitate automatic reward schemes.
+Therefore, the delegation desiderata are as follows:
+\begin{itemize}
+    \item \emph{Cost Effectiveness:} stake delegation, re-delegation, or pool
+        formation should be cost effective;
+    \item \emph{Chain Delegation Restriction:} a limit to the number of
+        re-delegations of the same stake unit should be enforceable;
+    \item \emph{Delegation Verification:} participants in the system should be
+        able to verify the status of active delegations.
+\end{itemize}

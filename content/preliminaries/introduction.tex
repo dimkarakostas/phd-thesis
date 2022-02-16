@@ -1,0 +1,50 @@
+Security is typically expressed via formal provable statements expressed
+through so-called \emph{security games}, \ie time-limited interactions with an
+adversary. The adversary is modelled as a set of algorithms which, depending on
+the generality of the security argument, may be abstract or well-defined. In
+each game, an adversary has some winning condition, \eg outputting a forged
+signature. The goal of our security proofs is to demonstrate that, \emph{for
+any adversary}, the advantage in being successful, compared to outputting a
+purely random value, is small. If the maximum of the advantage, over all
+possible adversaries, is $0$, then we enjoy perfect security. Otherwise, the
+advantage is expressed with respect to the \emph{security parameter}
+$\secparam$. Specifically, security proofs typically employ asymptotics, by
+demonstrating that the success probability of the adversary is
+negligible\footnote{We say that a function $f$ is negligible in $\secparam$ if,
+for every $c, d$ in $\mbb{N}$, there is a $\secparam_{0} \in \mbb{N}$ such
+that, for all $\secparam > \secparam_{0}$ and $x \in \{ 0, 1
+\}^{\secparam^{d}}$, it holds that $f(x, \secparam) < \secparam^{-c}$.} in
+the security parameter, denoted by $\negl(\secparam)$.
+
+In summary, the cryptographic treatment of computer systems is based on three
+cornerstones~\cite{katz2020introduction}:
+\begin{enumerate}
+    \item \emph{Clearly-articulated assumptions}, which distill the
+    limitations of a system. The protocols covered in our work do not operate
+    unconditionally, thus we need to identify the restrictions imposed on the
+    environment, within which all parties operate, and the adversaries, against
+    which our protocols are protected.
+    \item \emph{Formal statement definitions}, which specify the desirable
+    properties of our protocols, under the aforementioned assumptions.
+    \item \emph{Rigorous proofs of security}, which guarantee that the formal
+    statements hold, as long as the assumptions are satisfied. In this work, we
+    consider \emph{generic adversaries}, instead of employing ad-hoc arguments,
+    therefore the proofs are mathematical arguments which typically employ only
+    computational bounds.
+\end{enumerate}
+
+In the upcoming sections, we overview the foundations upon which the main body
+of this thesis is built, assuming a general computer science background on the reader's part. We
+first overview a list of core cryptographic primitives, which will serve as
+building blocks in many of our protocols. Following, we provide an overview of
+classic computing problems, namely consensus and distributed ledgers, and their
+modern variations, \ie blockchain-based distributed protocols. This section
+offers only a brief review of the topics; for a full treatment, we refer to
+textbooks on:
+\begin{inparaenum}[i)]
+    \item cryptography and computer
+    security~\cite{katz2020introduction,goldreich2007foundations,goldreich2009foundations};
+    \item distributed systems~\cite{koulouris2002distributed};
+    \item blockchain-based ledgers~\cite{narayanan2016bitcoin};
+    \item game theory~\cite{nisan2007algorithmic,straffin1993game,roughgarden2016twenty}.
+\end{inparaenum}

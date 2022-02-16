@@ -1,0 +1,57 @@
+\section{State Efficiency in Bitcoin}\label{sec:fee_model}
+
+We now define the \emph{state efficiency} property. Our goal is to incentivize
+users to minimize the global state, without impacting the system's
+functionality. In that case, if all users are rational, \ie operate following
+the incentives, then the state will be minimized as much as possible. Future
+work will explore the actual impact of deploying such incentives in real-world
+systems.
+
+To achieve state efficiency, a transaction's fee should be proportional to the
+incurred state cost. In other words, the more a transaction increases the
+ledger's state, the higher its fees should be. Specifically, a transaction's
+fee should reflect:
+\begin{inparaenum}[i)]
+    \item the transaction's size, \ie the cost of storing a transaction
+        permanently on the ledger and
+    \item the transaction's state cost.
+\end{inparaenum}
+A distributed ledger's fee model should aim at incentivizing users
+to minimizing both storage types, \ie the distributed ledger and the global
+state.
+
+First, we define the \emph{fee function} $\feeFunction$, \ie the function that
+assigns an (integer) fee on a transaction, given a ledger state:
+$\feeFunction: \mathit{Transaction} \rightarrow \mathit{LedgerState} \rightarrow \mathit{Int}$.
+Following, Definition~\ref{def:state-efficiency} describes \emph{state
+efficiency}. This property instructs the fee function to (monotonically)
+increase fees, if a transaction increases the state. Intuitively, between two
+equivalent transactions, the transaction that incurs greater state cost should
+also incur a larger fee.
+
+\begin{definition}\label{def:state-efficiency}
+    A fee function $\feeFunction$ is \emph{state efficient} if
+    \begin{align*}
+        \forall \ledgerState \in \ledgerStateSet \forall \tx_1, \tx_2 \in \txSet \mid \tx_1 \equiv \tx_2 \land \mathit{costTx}(\tx_1, \ledgerState) > \mathit{costTx}(\tx_2, \ledgerState):
+        \feeFunction(\tx_1, \ledgerState) > \feeFunction(\tx_2, \ledgerState)
+    \end{align*}
+    for transaction cost function (cf. Definition~\ref{def:tx-cost}) and
+    equivalence (cf. Definition~\ref{def:equiv_txs}).
+\end{definition}
+
+Evidently, if the utility of users is to minimize transaction fees, a state
+efficient fee function ensures that they are also incentivized to minimize the
+global state. Finally, Definition~\ref{def:state-efficiency-same-out} sets
+\emph{narrow state efficiency}, a special case of state efficiency which
+compares equivalent transactions that differ only in their inputs.
+
+\begin{definition}\label{def:state-efficiency-same-out}
+    A fee function $\feeFunction$ is \emph{narrow state efficient} if
+    \begin{align*}
+        \forall \ledgerState \in \ledgerStateSet \forall \tx_1, \tx_2 \in \txSet \mid \\
+        \tx_1 \equiv \tx_2 \land \tx_1.\mathsf{outputs} = \tx_2.\mathsf{outputs} \land \mathit{costTx}(\tx_1, \ledgerState) > \mathit{costTx}(\tx_2, \ledgerState): \\
+        \feeFunction(\tx_1, \ledgerState) > \feeFunction(\tx_2, \ledgerState)
+    \end{align*}
+    for transaction cost function (cf. Definition~\ref{def:tx-cost}) and
+    equivalence (cf. Definition~\ref{def:equiv_txs}).
+\end{definition}

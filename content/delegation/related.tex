@@ -1,0 +1,16 @@
+\paragraph{Related Work}
+Despite the large number of available PoS cryptocurrencies, formal wallet
+research has been rather sparse and limited so far. A widely implemented wallet
+standard is the HD Wallet Standard BIP32~\cite{bip32}, based on the idea of
+deterministic wallets~\cite{detwallet}. Gutoski and Stebila~\cite{FC:GutSte15}
+studied security in the presence of partial key leakage, focusing on
+BIP32-compliant wallets, whereas Courtois \etal~\cite{EPRINT:CouEmiVal14}
+investigated the state of wallets and key management for
+Bitcoin~\cite{nakamoto2008bitcoin}. We note that these works focus on PoW-based
+systems and thus do not consider issues such as stake delegation and protocol
+participation. In the PoS setting, a related work is the Bitshares' delegation
+PoS mechanism~\cite{schuh2017bitshares}, which, however, does not provide any
+formal model or proof of security. Furthermore, a formal specification of
+Cardano's wallet is also available~\cite{cardano-wallet}, although it focuses
+on the wallet's implementation, rather than the security properties and
+cryptographic model.

@@ -1,0 +1,89 @@
+\subsubsection{Multi-Leader Proof-of-Stake}\label{subsec:multi-leader-pos}
+
+We now turn to Ouroboros Praos~\cite{EC:DGKR18}, the representative protocol of
+a family that includes Ouroboros Genesis~\cite{CCS:BGKRZ18},
+Peercoin~\cite{king2012ppcoin}, and Tezos' baking system~\cite{tezos-pos}. These
+are similar to the previous PoS family (cf.
+Section~\ref{subsec:single-leader-pos}), but with one difference: it is
+possible that multiple parties are chosen as leaders for the same time slot.
+As Theorem~\ref{thm:compliant-praos} shows, Ouroboros Praos and the other
+members of this family are not compliant. The core argument of the proof is the
+same as with Ouroboros under a lossy network
+(Theorem~\ref{thm:compliant-ouroboros-lossy}). Specifically, assuming
+a randomized message delivery, a party is incentivized to produce multiple
+blocks to decrease the probability that a conflicting block, produced by a
+fellow slot leader, is adopted over their own.
+We note that, neither Ouroboros nor Ouroboros Praos enforce a choice policy in
+case of conflicting messages. However, parties typically utilize network
+delivery, opting for the message that arrives first.
+
+\begin{theorem}\label{thm:compliant-praos}
+    Assume
+    \begin{inparaenum}[i)]
+        \item a synchronous network (cf.
+            Section~\ref{sec:network-model}),
+        \item the conflicting infraction predicate $\infractionPredicate_{conf}$
+            (Definition~\ref{def:blockchain-infraction}),
+        \item that $\forall \party' \in \partySet: \miningpower_{\party'} <
+            \frac{1}{2}$, and
+        \item that $\party$ is the party with maximum $\sum_{j \in [1, \epoch]} \miningpower_{\party, j}$ over all parties.
+    \end{inparaenum}
+
+    Ouroboros Praos with block-proportional rewards (Definition~\ref{def:proportional-rewards}, for fixed block reward $\reward$) is \emph{not} $(\epsilon, \infractionPredicate_{conf})$-compliant (Definition~\ref{def:compliant}) \wrt utility \emph{Reward} for (non-negligible)
+    $\epsilon < \frac{1}{2} p_l \cdot \reward \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot \miningpower_{\party,j}$,
+    where $p_l$ is the (protocol-dependent) probability that $2$ leaders are
+    elected for the same slot, and is \emph{not} $(\epsilon,
+    \infractionPredicate_{conf})$-compliant \wrt utility \emph{Profit} for any
+    $\epsilon < (\frac{1}{6} p_l \cdot \reward - \cost) \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot \miningpower_{\party,j}$.
+\end{theorem}
+\begin{proof}
+    As with Theorem~\ref{thm:compliant-ouroboros-lossy}, we will define a bad
+    event $E$, during which the expected rewards of party $\party$ are less
+    if following $\proto$, compared to a non-compliant strategy.
+
+    Let $\slot$ be a slot during which $\party$ is leader. Additionally, a
+    different party $\party'$ is also a leader of $\slot$. Both parties create
+    two different messages and both set the network priority
+    to the maximum (cf. Section~\ref{sec:network-model}); we note that typically the
+    protocol instructs the parties to diffuse the messages as soon as possible,
+    which is equivalent to setting maximum priority.
+    Following, the
+    diffuse functionality delivers $\block'$ before $\block$, therefore all
+    parties (possibly except $\party$) adopt $\block'$ and ignore $\block$.
+
+    Let $p_E$ be the probability that $E$ occurs. First, $p_E$ depends on the
+    probability $p_l$ that multiple leaders exist alongside $\party$; $p_l$
+    depends on the protocol's leader schedule functionality, but should
+    typically be non-negligible. Second, it depends on the order delivery of
+    $\block, \block'$; since both have the same priority and the delivery is
+    randomized, (cf. Section~\ref{sec:network-model}), the probability $p_n$
+    that $\block'$ is delivered before $\block$ is $p_n = \frac{1}{2}$.
+    Therefore, it holds $p_E = p_l \cdot p_n = \frac{1}{2} p_l$, which is
+    non-negligible.
+
+    Additionally, if $\sum_{j \in [1, \epoch]} \epochLength \cdot
+    \miningpower_{\party,j}$ is the number of slots during which $\party$ is
+    leader, the total expected rewards of $\party$, when everybody (including
+    $\party$) follows $\proto$, are at most
+    $(1 - \frac{1}{2} p_l) \cdot \reward \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot \miningpower_{\party,j}$.
+
+    Now, consider the following (non-compliant) strategy, which is employed only by $\party$. When $\party$ is slot
+    leader, it produces $t > 1$ blocks, which it diffuses with maximum
+    priority. If every party $\party' \neq \party$ follows $\proto$, the
+    probability $p_l$ remains the same as before. Therefore, if $\party, \party'$ are both leaders,
+    the probability that the following slot's leader adopts the block of $\party'$ is $\frac{1}{t+1}$.
+    So, the total expected
+    rewards of $\party$ under the new strategy are
+    $(1 - \frac{1}{t+1} p_l) \cdot \reward \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot \miningpower_{\party,j}$.
+    Since $\frac{1}{t+1} < \frac{1}{2}$, the new strategy profile is directly
+    reachable from the $\profile_\proto$, when every party follows $\proto$.
+    Additionally, as $t \rightarrow \infty$, the expected rewards tend to the
+    (maximum) value $\reward \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot
+    \miningpower_{\party,j}$.
+
+    Regarding \emph{Profit}, for $t = 2$ the increase in expected rewards is:
+    $((1 - \frac{1}{3} p_l) - (1 - \frac{1}{2} p_l)) \cdot \reward \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot \miningpower_{\party,j} \Rightarrow
+    \frac{1}{6} p_l \cdot \reward \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot \miningpower_{\party,j}$,
+    thus the bound for $\epsilon$ follows with the same reasoning as
+    Theorem~\ref{thm:compliant-ouroboros-lossy}.
+\end{proof}

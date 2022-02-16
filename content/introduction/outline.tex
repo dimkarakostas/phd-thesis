@@ -1,0 +1,120 @@
+\section{Motivation and Contributions}
+
+Evidently, although the distributed ledger used by Bitcoin
+is a marvelous \emph{technical} achievement, the application built on top of it
+is rather flawed. Specifically, as Bitcoin is a somewhat simple protocol, aimed
+at working on a basic level for its core application, \ie transacting, there
+are various avenues of research on the usability, efficiency, and ecological
+and economic sustainability of distributed ledger-based applications.
+
+Regarding usability, Bitcoin users control their assets via a cryptographic
+key. Using this key, they can only perform limited actions, such as
+transferring assets between addresses, possibly under some very basic
+conditions. Importantly, the ledger is immutable; once a transaction is
+complete, it is impossible to revert it. As a result, if the controlling key is
+compromised, the assets are at risk. This makes Bitcoin and cryptocurrencies a
+prime target for criminals, as is evident by the --- almost daily --- reports
+of thefts that are worth thousands of dollars.
+
+Regarding efficiency, a decentralized system should be carefully designed to
+enable hundreds or thousands of participants to quickly process data under
+reasonable hardware requirements. Bitcoin requires of users and miners to store
+two data objects. First, the log of transactions, an ever-increasing list of
+historical data. Second, the state of the systems, \ie a mapping of addresses
+and the amount of bitcoins each owns. As time passes, both objects increase.
+Therefore, if this trend continues, the system is bound to be unmaintainable
+without using specialized, expensive hardware.
+
+From an ecological point of view, Bitcoin is clearly unsustainable. In the past years,
+this has become common knowledge, with alternative, more sustainable designs
+being proposed, of which Proof-of-Stake (PoS) is the most prominent. PoS is a
+variation of PoW where, instead of computational power, users are identified by
+stake in the system, \ie the assets that they own. Consequently, the energy
+footprint of PoS-based ledgers is minuscule, offering a rather appealing
+alternative to Bitcoin.
+
+From an economic point of view, both in theory and in practice, Bitcoin has
+proven unable to sustain a real-world, productive economy. Instead, as shown
+above, it has been used mostly in gray areas of speculation and dubious
+transactions. A particularly interesting question then is how distributed ledgers could be
+better utilized, by applications that solve real problems and which are managed
+in an open, democratic manner by the whole of society, instead of a small group
+of insiders and early adopters.
+
+Based on these principles, this thesis makes incremental steps in improving how
+digital assets, which are maintained via a distributed ledger, are designed,
+managed, and used. The contributions are split into the following main
+chapters, each based on one of the research papers output during the
+composition of the thesis:
+\begin{itemize}
+    \item \textbf{Formalization of Hardware Wallets}:
+        Chapter~\ref{chap:hardware-wallets} analyzes hardware wallets, \ie
+        hardware modules that offer state-of-the-art security in storing and
+        managing cryptocurrencies. We present a formal model of expressing the
+        necessary properties of hardware wallets, which is then used to analyze
+        a number of commercial products, identifying, in some cases, potential
+        hazards.
+    \item \textbf{Account Management in Proof-of-Stake Ledgers}:
+        Chapter~\ref{chap:delegation} articulates the necessary properties of
+        managing assets on PoS-based ledgers. In doing so, it first identifies
+        a malleability attack on cryptocurrency addresses, which is applicable
+        against real-world deployed systems, and then proposes a formal model
+        that captures the security of Proof-of-Stake wallets, which enables
+        participation in the ledger, either as a user or a maintainer of the
+        system.
+    \item \textbf{Collective Stake Pools}:
+        The model of Chapter~\ref{chap:delegation} defines participation in the
+        consensus mechanism of a Proof-of-Stake ledger via stake pools, \ie
+        collaborative entities of multiple parties. However, these pools are
+        presumably operated by a single party.
+        Chapter~\ref{chap:collective-pools} relaxes this centralization
+        assumption by introducing \emph{Conclave}, a design that enables a
+        group of parties to jointly manage a stake pool, in a competitive and
+        highly efficient manner.
+    \item \textbf{Efficient Global State Management}:
+        The transactions that are created by a wallet are stored in a global
+        state, which is shared across all participants. As such, efficient
+        state management is imperative, if the system is to scale to thousands
+        or millions of users. Chapter~\ref{chap:utxo-growth} introduces a
+        framework for constructing such efficient transactions and describes
+        how to incentivize both users (\eg operators of hardware wallets, as in
+        Chapter~\ref{chap:hardware-wallets}) and maintainers (\eg stake pool
+        operators, as in Chapters~\ref{chap:delegation}
+        and~\ref{chap:collective-pools}) to avoid the unnecessary bloating of the
+        shared state.
+    \item \textbf{Blockchain Nash Dynamics}:
+        Cryptographic treatment assumes that parties act either faithfully or
+        arbitrarily and (possibly) maliciously; to evaluate whether it is in
+        the parties' best interest to follow a protocol, we turn to game
+        theory. Chapter~\ref{chap:compliance} builds on the results of
+        Chapter~\ref{chap:utxo-growth} and explores under which conditions
+        parties remain compliant, \ie do not exhibit a well-defined problematic
+        behavior, even if slightly diverging from the prescribed protocol. We
+        evaluate large families of deployed protocols and offer both positive
+        and negative results, which showcase the differences between PoW and
+        PoS, as well as the limits of system design in the presence of external
+        market factors.
+    \item \textbf{Macroeconomic Principles}:
+        Chapter~\ref{chap:macroeconomics} explores some macroeconomic properties of
+        blockchain-based financial systems. First, we show that wealth redistribution from large to
+        small capital owners is impossible in anonymous decentralized financial
+        systems. Building on this result, we define crypto-egalitarianism, a
+        metric which identifies the rate at which wealthy investors accumulate
+        capital and quantifies the identified limitation, with the best
+        possible scenario being a linear reward rate with respect to the
+        invested capital.
+        Second, we consider how a taxation policy can be enforced in such
+        environment, under such limitations. Although the first and, till now,
+        primary application of blockchains has been hosting decentralized
+        financial systems, an evolving line of research looks into integrating
+        this technology in traditional systems, to create centrally-controlled
+        digital cash.  We builds on this idea by exploring how distributed
+        ledgers can help solve a widespread problem in real-world economies,
+        \emph{tax gaps}. We contribute by presenting two ideas, via which a tax
+        authority can identify differences between the assets reported by
+        citizens and the actual assets these citizens own.
+\end{itemize}
+
+In addition, Chapter~\ref{sec:preliminaries} reviews necessary
+background material and Chapter~\ref{chap:conclusion} offers concluding remarks
+and ties together the thesis's core results.

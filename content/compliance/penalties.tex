@@ -1,0 +1,203 @@
+\subsection{Penalties}
+
+Table~\ref{tab:attacks} shows that, historically, the attacks are profitable,
+so the market's response is insufficient to keep a party compliant.
+Interestingly, in many occasions the external utility was so high that, even if
+the exchange rate became $0$, it would exceed the amount of lost rewards.
+Therefore, an additional form of utility reduction is necessary. In many PoS
+systems, like
+Casper~\cite{buterin2017casper,casper-incentives},
+Gasper~\cite{buterin2020combining}, and Tezos~\cite{tezos-pos},
+this decrease is implemented as penalties for misbehavior.
+
+In detail, each party $\party$ is required to lock an amount of assets in a
+deposit $\deposit_{\party}$. If $\party$ violates a well-defined condition, its
+deposit is forfeited, along with its accumulated rewards. Typically,
+misbehavior is identified by a non-interactive proof of the misbehavior, \eg a
+signed malicious message.
+
+Considering profiles $\profile_\proto, \profile_{\strategy_{\party}}$ as
+before, $\party$'s rewards take shape as follows. Under $\profile_\proto$,
+$\party$ receives $\rewardVal_{\party, \profile_\proto}$, which are exchanged
+under rate $\exchangeRateVal_{\profile_\proto}$; also, it retains its deposit
+$\deposit_{\party}$, which is exchanged under the same rate. Under
+$\profile_{\strategy_{\party}}$, $\party$ forfeits both its rewards and deposit, but
+receives external utility $\utilityBoostVal_{\party, \profile_{\strategy_{\party}}}$.
+Therefore, under penalties a party is incentivized to be compliant if
+the forfeited deposit and rewards are larger than the external utility
+(cf. Theorem~\ref{thm:penalties-ouroboros}).
+
+\begin{theorem}\label{thm:penalties-ouroboros}
+    Assume
+    \begin{inparaenum}[i)]
+        \item a synchronous network (cf. Section~\ref{sec:network-model}),
+        \item the conflicting predicate $\infractionPredicate_{conf}$, and
+        \item that $\forall \party \in \partySet: \miningpower_{\party} <$~$\frac{1}{2}$.
+    \end{inparaenum}
+    Also let:
+    \begin{inparaenum}[i)]
+        \item $\strategySet_{-\infractionPredicate_{conf}}$: the set of all non-compliant strategies;
+        \item $\exchangeRateVal_{\profile_\proto}$: the (expected) exchange rate under $\profile_\proto$;
+        \item $\exchangeRateVal_{\profile_{\strategy_{\party}}}$: the (expected) exchange rate when only $\party$ employs some non-compliant conflicting strategy $\strategy_{\party}$;
+        \item $\utilityBoostVal_{\party, \profile_{\strategy_{\party}}}$: the external utility that $\strategy_{\party}$ yields for $\party$.
+    \end{inparaenum}
+    Finally, assume the block-proportional rewards (cf.
+    Definition~\ref{def:proportional-rewards} for fixed block reward $\reward$)
+    for which it also holds:
+    $$
+    \forall \executionTrace \; \forall \party \in \partySet: \reward_{\party, \executionTrace} =
+    \left\{
+    \begin{array}{ll}
+        \proportionalRewardFunc(\chain_{\observer,\executionTrace}, \party) \cdot \totalReward_{\observer,\executionTrace} + \deposit_{\party},&\party \mbox{ produces no conflicting blocks in } \executionTrace\\
+        0,&\mbox{otherwise}
+    \end{array}
+    \right.$$
+    for a protocol-specific deposit value $\deposit_{\party}$ with
+    $\rewardVal_{\party, \profile} = E[\reward_{\party,
+    \execution_{\profile}}]$, \ie the expected rewards of $\party$ under
+    profile $\profile$.
+
+    Ouroboros with the above rewards and under the aforementioned externalities
+    is not $(\epsilon, \infractionPredicate_{conf})$-compliant (cf.
+    Definition~\ref{def:compliant}) \wrt utility \emph{Reward} (cf.
+    Definition~\ref{def:utility}) and, if $\reward > \cost$, it is also not
+    $(\epsilon, \infractionPredicate_{conf})$-compliant \wrt utility \emph{Profit},
+    in both cases for a bound
+    $\epsilon < \underset{\party \in \partySet}{\mathsf{max}}\{ \underset{\strategy_{\party} \in \strategySet_{-\infractionPredicate_{conf}}}{\mathsf{max}}\{ \utilityBoostVal_{\party, \profile_{\strategy_{\party}}} \} \} - \rewardVal_{\party, \profile_{\proto}} \cdot \exchangeRateVal_{\profile_\proto} - \mathsf{negl}(\secparam)$.
+\end{theorem}
+\begin{proof}
+    When a party $\party$ employs a non-compliant strategy $\strategy_{\party}$,
+    it receives an external utility $\utilityBoostVal_{\party,
+    \profile_{\strategy_{\party}}}$. Also, in that case, it produces
+    conflicting blocks (due to the non-compliance property of
+    $\strategy_{\party}$). Therefore, by definition of the above
+    block-proportional rewards, $\reward_{\party, \profile_{\strategy_{\party}}}
+    = 0$; in other words, when $\party$ employs $\strategy_{\party}$ and produces
+    conflicting blocks, $\party$ forfeits the protocol's rewards (which include
+    the original rewards plus the deposit $\deposit_{\party}$). Therefore, when
+    $\party$ employs $\strategy_{\party}$ and all other parties employ $\proto$,
+    $\party$'s utility is
+    $\utility_{\party}(\profile_{\strategy_{\party}}) = \utilityBoostVal_{\party, \profile_{\strategy_{\party}}}$
+    (cf. Definition~\ref{def:utility-external}).
+
+    We also remind that (from the proof of
+    Theorem~\ref{thm:compliant-ouroboros-synchronous}), $\party$ can bias the
+    leader schedule with some negligible probability $negl(\secparam)$, if it
+    controls a minority of power.
+
+    Therefore, for any party $\party$ and strategy $\strategy_{\party}$,
+    $\profile_{\strategy_{\party}}$ is directly $\epsilon$-reachable from
+    $\profile_{\proto}$ if:
+    \begin{align}
+        \rewardVal_{\party, \profile_{\proto}} \cdot \exchangeRateVal_{\profile_\proto} + \mathsf{negl}(\secparam) + \epsilon < \utilityBoostVal_{\party, \profile_{\strategy_{\party}}} \Leftrightarrow \nonumber \\
+        \epsilon < \utilityBoostVal_{\party, \profile_{\strategy_{\party}}} - \rewardVal_{\party, \profile_{\proto}} \cdot \exchangeRateVal_{\profile_\proto} - \mathsf{negl}(\secparam) \nonumber
+    \end{align}
+
+    Across all parties and all non-compliant strategies, the maximum such $\epsilon$ is:
+    \begin{align}
+        \epsilon < \underset{\party \in \partySet}{\mathsf{max}}\{ \underset{\strategy_{\party} \in \strategySet_{-\infractionPredicate_{conf}}}{\mathsf{max}}\{ \utilityBoostVal_{\party, \profile_{\strategy_{\party}}} \} \} - \rewardVal_{\party, \profile_{\proto}} \cdot \exchangeRateVal_{\profile_\proto} - \mathsf{negl}(\secparam) \nonumber
+    \end{align}
+
+    We note that, as shown in
+    Theorem~\ref{thm:compliant-ouroboros-synchronous}, Ouroboros with block
+    proportional rewards under a synchronous network is an equilibrium, \ie the
+    honest protocol yields the maximum rewards for each party compared to all
+    other strategies. In the present setting, the honest protocol again yields
+    the maximum utility, compared to all other \emph{compliant} strategies. To
+    prove this it suffices to observe that, if a party does not produce
+    conflicting blocks, its rewards are a linear function of the rewards of the
+    setting of Theorem~\ref{thm:compliant-ouroboros-synchronous}; therefore,
+    between compliant strategies, the honest protocol yields the maximum
+    rewards (as shown in Theorem~\ref{thm:compliant-ouroboros-synchronous}).
+
+    Therefore, the given bound of $\epsilon$ is bounded from below and, for
+    $\epsilon$ less than this bound, there exists a party $\party$ that is
+    incentivized to employ a (non-compliant) strategy $\strategy_{\party}$ and
+    produce conflicting blocks, rendering $\proto$ not $(\epsilon,
+    \infractionPredicate_{conf})$-compliant.
+\end{proof}
+
+An issue of both externality-based Theorems (\ref{thm:external-ouroboros}
+and~\ref{thm:penalties-ouroboros}) is that $\epsilon$'s bound depends on
+$\utilityBoostVal_{\party, \profile_{\strategy_{\party}}}$. This bound may be
+high (\ie non-negligible), but it does not depend on protocol parameters, but
+instead depends on external (to the protocol) variables (\eg the payoff of a
+double-spending attack). Therefore, it is outside of the control of the
+protocol's designer, who can only ensure that a protocol is secure by only
+\emph{assuming} an upper bound on this external payoff.
+
+Intuitively though, $\epsilon$'s bound shows that
+attacks are prevented by two parameters.
+First, the larger the deposit, the more attacks it protects against. For
+example, a deposit of \$$10$M would protect against all attacks of
+Table~\ref{tab:attacks}. However, large deposits also shut off small parties,
+who do not own adequate assets. Therefore, a tradeoff exists in preventing
+double spending attacks and enabling widespread participation.
+Second, the longer the duration of an attack, the more blocks an adversary
+needs to produce, hence the larger the rewards that it forfeits. Typically,
+the attack duration depends on the number of confirmations that the offended
+party, \eg an exchange, enforces. Therefore, enforcing different confirmation
+limits, based on a transaction's value, would both enable fast settlement for
+small transfers and protect large transactions.
+
+Taking this observation into account, we briefly review users' behavior, when
+running Ouroboros (cf.  Section~\ref{subsec:single-leader-pos}) under deposits
+and penalties. In an Ouroboros execution, it is possible to identify the
+percentage of parties that actively participate during each epoch, by observing
+the block density and the number of empty slots (\ie when no block is
+diffused). Therefore, it is possible to estimate the level of infraction, \ie
+double-signing, that a party needs to perform to mount a double-spending
+attack, and then enforce a transaction finalization rule to disincentivize
+such attacks.
+
+Let $\party$ be a user of an Ouroboros ledger. $\party$ enforces
+a rule of $k$ confirmations, \ie finalizes a transaction after it is
+``buried'' under $k$ blocks. Let $\tau$ be a transaction published in a block
+on slot $\slot$, with value $v_\tau$. After $l$ slots, $\party$ sees that
+$\tau$ has been buried under $b$ blocks, with $b = x \cdot l$ for some $x > 0.5$. Therefore, $(1 -
+x) \cdot 100$\% of slots are -- seemingly -- empty. $\party$ will (on expectation)
+confirm $\tau$ after $\frac{1}{x} \cdot k$ slots, \ie when $k$
+blocks are produced; of these, $\frac{1 - x}{x} \cdot k$ are empty.
+
+Let $\adversary$ be a party that wants to double-spend $\tau$.
+$\adversary$ should produce a private chain with at least $k$ blocks. Of these,
+at most $\frac{1 - x}{x} \cdot k$ correspond to the respective empty slots,
+while $k - \frac{1 - x}{x} \cdot k = \frac{2 \cdot x - 1}{x} \cdot k$ conflict
+with existing blocks, \ie are evidence of infraction.
+
+Let $d$ be a deposit amount, which corresponds to a single slot. Thus, for a
+period of $t$ slots, the total deposited assets $D = t \cdot d$ are distributed evenly
+across all slots.
+$\adversary$ can be penalized only for infraction blocks, \ie for
+slots which showcase conflicting blocks. In a range of $\frac{1}{x} \cdot k$ slots, infraction slots are $\frac{2 \cdot x - 1}{x} \cdot k$.
+
+Therefore, $\adversary$ forfeits at most $\frac{2 \cdot x - 1}{x} \cdot k \cdot
+d$ in deposit and $\frac{2 \cdot x - 1}{x} \cdot k \cdot \reward$ in rewards
+that correspond to infraction blocks.
+Therefore, if $v_\tau > \frac{2 \cdot x - 1}{x} \cdot k \cdot (d + \reward)$,
+$\adversary$ can profitably double-spend $\tau$.
+Consequently, depending on the amount $d$ of deposit per slot, the block reward
+$\reward$, and the rate $(1 - x)$ of empty slots, for a transaction $\tau$ with
+value $v_\tau$, $\party$ should set the confirmation window's size to:
+\begin{align}
+    k_\tau > \frac{v_\tau}{\frac{2 \cdot x - 1}{x} \cdot (d + \reward)}
+\end{align}
+
+Finally, the system should allow each participant to withdraw their deposit
+after some time. However, it should also enforce \emph{some} time limit, to
+ensure that adequate deposit exists to (possibly) enforce a penalty.
+Intuitively, a party $\party$ should be able to withdraw a deposit amount that
+corresponds to a slot $\slot$, only if no transaction exists, such that $\slot$
+is part of the window of size $k$ (with $k$ computed as above). In other words,
+$\party$'s deposit should be enough to cover all slots, which $\party$ has led
+and which are part of the confirmations' window of at least one non-finalized
+transaction.
+
+\begin{remark*}
+Penalties are applicable, and indeed common, in PoS systems,
+like those mentioned above, but the same does not hold for PoW systems. In PoW
+protocols like Bitcoin, the block producers are decoupled from the users of the
+system, thus it is often impossible to identify which party produced each
+block. Naturally, the same is true for fully anonymous protocols, both
+PoW~\cite{SP:MGGR13,SP:BCGGMT14} and PoS~\cite{EC:GanOrlTsc19,SP:KKKZ19}.
+\end{remark*}

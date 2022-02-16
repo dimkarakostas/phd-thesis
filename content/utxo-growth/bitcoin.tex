@@ -1,0 +1,140 @@
+\paragraph{Bitcoin's State Management}\label{sec:bitcoin-fees}
+Bitcoin's consensus model does not consider fees. Specifically, the user
+decides a transaction's fees and the miners choose whether to include a
+transaction in a block. Therefore, it has been stipulated that the level of
+fees is the balance between the rational choices of miners, who supply the
+market with block space, and users, who demand part of said
+space~\cite{bitcoin-fees}.
+
+In practice, users follow the client software's choice even when not
+needed~\cite{FCW:MosBoh15}, \eg when blocks are not full. Similarly, miners
+usually follow the hard-coded software rules and may accept even zero-fee
+transactions. The reference rules of the Bitcoin Wiki~\cite{bitcoin-fees}
+define the \emph{fee rate} $x$, which is the fraction of fees per transaction
+size, Miners sort transactions based on this metric and solve the Knapsack
+problem to fill a new block with transactions that maximize it. Some notable
+alternatives also focus on fee
+rate~\cite{santos2019miner,rizun2015transaction}, while reference
+rules~\cite{bitcoin-fees} used to also take into account the UTxO age.
+
+As before, a transaction consists of inputs and outputs, \ie old UTxOs which
+are spent and newly-created UTxOs. Inputs and UTxOs have a fixed size
+$\txInputSize$ and $\utxoSize$ respectively.\footnote{This assumption slightly
+diverges from the real-world, where UTxOs are typically of varying size
+depending on the operations in the ScriptPubKey.} The size of a transaction is
+the sum of its inputs and outputs, \ie is a linear combination of
+$\txInputSize$ and $\utxoSize$, while a transaction's cost is the difference
+between the number of its UTxOs minus its inputs.
+Bitcoin's fee function is $\feeFunction = \sizeByteFee \cdot
+\mathsf{size}(\tx)$, where $\mathsf{size}(\tx)$ is $\tx$'s size in bytes and
+$\sizeByteFee$ is a fixed fee per byte.\footnote{$\sizeByteFee = 0.0067$\$/byte
+[September 2020] (\url{https://bitinfocharts.com})}
+
+We break the fee efficiency of $\feeFunction$ via a counterexample. Assume two
+transactions which are applied on the same ledger state $\ledgerState$; for
+ease of notation, in the rest of the section $\feeFunction(\tx)$ denotes
+$\feeFunction(\tx, \ledgerState)$. First, $\tx_1$ has $1$ input and $1$ output,
+so its state cost is $\costFunc(\tx_1, \ledgerState) = 0$ and its fee is
+$\feeFunction(\tx_1) = \sizeByteFee \cdot (\txInputSize + \utxoSize)$. Second,
+$\tx_2$ has $2$ inputs and $1$ output, \ie its state cost is $\costFunc(\tx_2,
+\ledgerState) = -1$, since it decreases the state; however, its fee is
+$\feeFunction(\tx_2) = \sizeByteFee \cdot (2 \cdot \txInputSize + \utxoSize) =
+\feeFunction(\tx_1) + \sizeByteFee \cdot \txInputSize$.  Thus, although
+$\costFunc(\tx_1) > \costFunc(\tx_2)$, $\tx_2$'s fee is higher, since it is
+larger.
+
+A better alternative fee function is the following:
+$\feeFunction' = \sizeByteFee \cdot
+\mathsf{size}(\tx) + \utxoFee \cdot \costFunc(\tx, \ledgerState)$.
+Note that this is state-efficient in our model  for a
+sufficiently small value of $\beta$ (cf. Section~\ref{sec:state-efficient-bitcoin}).
+Observe with this function, when
+increasing the UTxO set, a user needs to pay an extra fee $\utxoFee$ per UTxO.
+Given this change, the reference rules are updated so that, instead of the fee rate, miners use the scoring function:
+$\mathsf{score}(\tx) = \frac{\mathsf{fees}(\tx) - \utxoFee \cdot \costFunc(\tx,
+\ledgerState)}{\mathsf{size}(\tx)}$, where $\mathsf{fees}(\tx)$ are $\tx$'s
+total fees. In market prices, $1$ byte of RAM
+costs approximately $\$3.35 \cdot 10^{-9}$~\cite{ram-price}. The average size of a Bitcoin
+UTxO is $61$ Bytes~\cite{FCW:DPNH18}, so a single Bitcoin UTxO costs
+$\utxoFee = 61 \cdot 3.35 \cdot 10^{-9} = \$2 \cdot 10^{-7}$. Given $10000$
+full nodes\footnote{\url{https://bitnodes.io} [July 2020]}, which maintain the
+ledger and keep the UTxO in memory, the cost becomes $\utxoFee =
+\$0.002$; equivalently, denominated in Bitcoin\footnote{$1 BTC = \$9000$
+[\url{https://coinmarketcap.com}; July 2020]}, the cost of creating a UTxO is
+$\utxoFee = 22$ satoshi.
+
+This solution incorporates the operational costs of miners, thus it is the
+rational choice for miners who aim at maximizing their profit. Observe that,
+after subtracting the fees that relate to UTxO costs, the scoring mechanism
+behaves the same as the one currently used by Bitcoin miners. Therefore, if
+users wish to prioritize their transactions, they would again simply increase
+their transaction's fees; in that case, the UTxO portion of the fees (\ie
+$\utxoFee \cdot \costFunc(\tx, \ledgerState)$) remains the same, hence higher
+$\mathsf{fees}$ result in a higher $\mathsf{score}$, similar to the existing
+mechanism. Also we note that this mechanism is directly enforceable on Bitcoin
+without the need of a fork.
+
+\subsection{A State Efficient Bitcoin}\label{sec:state-efficient-bitcoin}
+
+Intuitively, to make $\feeFunction$ state efficient we force the creator of
+a UTxO to subsidize its consumption, \ie to pay the user who later
+consumes it. Our fee function is again: $\feeFunction' =
+\sizeByteFee \cdot \mathsf{size}(\tx) + \utxoFee \cdot \costFunc(\tx,
+\ledgerState)$. Assume two transactions $\tx_1, \tx_2$ with $i_1, i_2$
+inputs and $o_1, o_2$ outputs respectively:
+\begin{align}
+    \costFunc(\tx_1) > \costFunc(\tx_2) \Leftrightarrow
+    o_1 - i_1 > o_2 - i_2 \Leftrightarrow
+    o_2 - o_1 < i_2 - i_1 \label{eq:tx-cost-diff}
+\end{align}
+$\feeFunction'$ is state efficient (cf.
+Definition~\ref{def:state-efficiency}) if:
+\begin{align}
+    \feeFunction'(\tx_1) > \feeFunction'(\tx_2) \Rightarrow \nonumber \\
+    \mathsf{size}(\tx_1) \cdot \sizeByteFee + \costFunc(\tx_1) \cdot \utxoFee > \mathsf{size}(\tx_2) \cdot \sizeByteFee + \costFunc(\tx_2) \cdot \utxoFee \Rightarrow \nonumber \\
+    (i_1 \cdot \txInputSize + o_1 \cdot \utxoSize) \cdot \sizeByteFee + (o_1 - i_1) \cdot \utxoFee > (i_2 \cdot \txInputSize + o_2 \cdot \utxoSize) \cdot \sizeByteFee + (o_2 - i_2) \cdot \utxoFee \Rightarrow \nonumber \\
+     (o_1 - i_1) \cdot \utxoFee - (o_2 - i_2) \cdot \utxoFee > (i_2 \cdot \txInputSize + o_2 \cdot \utxoSize) \cdot \sizeByteFee - (i_1 \cdot \txInputSize + o_1 \cdot \utxoSize) \cdot \sizeByteFee \Rightarrow \nonumber \\
+     (i_2 - i_1 + o_1 - o_2) \cdot \utxoFee > ((i_2 - i_1) \cdot \txInputSize + (o_2 - o_1) \cdot \utxoSize) \cdot \sizeByteFee \xRightarrow{(\ref{eq:tx-cost-diff})} \nonumber \\
+    \utxoFee > \frac{(i_2 - i_1) \cdot \txInputSize + (o_2 - o_1) \cdot \utxoSize}{(i_2 - i_1) - (o_2 - o_1)} \cdot \sizeByteFee \label{eq:state-efficiency}
+\end{align}
+If $\feeFunction'$ is narrow state efficient, then $o_1 = o_2$ and the inequality is simplified:
+\begin{align}
+    \utxoFee > \txInputSize \cdot \sizeByteFee \label{eq:narrow-state-efficiency}
+\end{align}
+
+We turn again to the previous example. For transaction $\tx_1$, with $1$ input
+and $1$ output, $\feeFunction'(\tx_1) = (\txInputSize + \utxoSize) \cdot
+\sizeByteFee$ and for transaction $\tx_2$, with $2$ inputs and $1$ output,
+$\feeFunction'(\tx_2) = (2 \cdot \txInputSize + \utxoSize) \cdot \sizeByteFee -
+\utxoFee = \feeFunction'(\tx_1) + \sizeByteFee \cdot \txInputSize - \utxoFee$.
+Since Inequalities~\ref{eq:state-efficiency}
+and~\ref{eq:narrow-state-efficiency} ensure that $\utxoFee > \txInputSize \cdot
+\sizeByteFee$, the size fee of the extra input in $\tx_2$ is offset by the
+extra fee $\utxoFee$, which is paid by the user who creates it.
+Again to evaluate these variables we consider market prices. The size of a
+typical, pay-to-script-hash or pay-to-public-key-hash, UTxO is
+$34$ Bytes~\cite{btc-tx}, while the size of consuming it is $146$ bytes.
+Therefore, to make and make present-day Bitcoin (narrow) state efficient, we can
+set $\utxoSize = 34$, $\txInputSize = 146$, $\sizeByteFee = 0.0067$\$, and thus
+$\utxoFee > 0.0978$\$.
+
+However, this approach presents a number of challenges. To enforce
+$\feeFunction'$, the fee policy should be incorporated in the consensus
+protocol and a transaction's validity will depend on its amount of fees. As
+long as $\feeFunction'(\tx) > 0$, \ie a transaction cannot have negative fees,
+the fee function can be enforced via a \emph{soft} fork. Specifically, this
+change is backwards compatible, as miners that do not adopt this change will
+still accept transactions that follow the new fee scheme. However, if
+$\costFunc(\tx) \ll 0$ and possibly $\feeFunction'(\tx) < 0$, to implement
+$\feeFunction'$ we need to establish a ``pot'' of fees. When a user creates
+$\tx$ with fee $\feeFunction' = \sizeByteFee \cdot \mathsf{size}(\tx) +
+\utxoFee \cdot \costFunc(\tx, \ledgerState)$, the first part ($\sizeByteFee
+\cdot \mathsf{size}(\tx)$) is awarded to the miners as before. The second part
+($\utxoFee \cdot \costFunc(\tx, \ledgerState)$) is deposited to (or, in case of
+negative cost, withdrawn from) the pot. In case of negative cost, the
+transaction defines a special UTxO for receiving the reimbursement. At any
+point in time, the size of the pot is directly proportional to the UTxO set.
+Observe that the miners receive the same rewards as before, so their business
+model is not affected by this change. Finally, the cost of flooding the system
+with UTxOs increases by $\utxoFee$ per UTxO which, depending on $\utxoFee$, can
+render attacks ineffective.

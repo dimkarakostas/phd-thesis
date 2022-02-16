@@ -1,0 +1,81 @@
+\section{Desiderata}\label{sec:collective-pool-desiderata}
+
+Our design assumes a group of stakeholders who jointly create a stake pool
+without a single operator. Since large stakeholders typically form pools on
+their own, our protocol concerns smaller stakeholders, who could otherwise not
+participate directly. Therefore, our design could \eg be appealing to a group
+of friends or colleagues, who aim for a more steady reward ratio without
+relying on a third party. Importantly, it should operate in a trustless environment as,
+unfortunately, even in these scenarios, trust is not
+a given. Notably, our targeted audience is parties who wish to
+actively participate, \ie always be online to perform the required consensus
+actions; parties who wish to remain offline may instead opt for delegation
+schemes~\cite{eosWhitepaper,SCN:KarKiaLar20}.
+
+In the absence of a central party, the responsibility of running the pool is
+shared among all pool's members, requiring some level of coordination which may
+be cumbersome. For instance, if the protocol requires unanimous actions, a
+single member could halt the pool's operation. To ensure good performance, the
+pool should allow a subset (of a carefully chosen size) to act on behalf of the
+whole group. The choice of such subsets depends on each party's ``weight'',
+which is in proportion to their stake.  In summary, we have the following
+initial assumptions, which form the basis for outlining our work's desiderata:
+
+\begin{itemize}[noitemsep]
+    \item \emph{small number of parties}: a collective pool is operated by a
+        small group of players;
+
+    \item \emph{small stake disparity}: the profiles of the collective pool's
+        members are similar, \ie they contribute a similar amount of stake to
+        the pool;
+
+    \item \emph{stake proportion as ``weight''}: each party is assigned a
+        weight for participating in the pool's actions, relative to their part
+        of the pool's total stake.
+\end{itemize}
+
+Next, we provide an exhaustive list of basic requirements of a collective stake
+pool. We note that an \emph{admissible party set} is a set of parties with
+enough stake, \ie above a threshold of the total pool's stake which is agreed
+upon during the pool's initialization. To the extent that some desiderata are
+conflicting, our design will aim to satisfy as many requirements as possible:
+\begin{itemize}[noitemsep]
+    \item \emph{Proportional Rewards}: the claim of each member on the
+        entire pool's protocol rewards should be proportional to
+        their individual contribution.
+
+    \item \emph{Joint Control of Rewards}: the members of a pool should
+        jointly control the access to its funds.
+
+    \item \emph{Unilateral Reward Withdrawal}: at any point in time, a
+        stakeholder should be able to claim their reward,
+        accumulated up to that point, without necessarily interacting with
+        other members of the pool.
+
+    \item \emph{Permissioned Access}: new users can join the pool following
+        agreement by an admissible set of pool members.
+
+    \item \emph{Robustness against Aborting}: the pool should not fail to
+        participate in consensus, unless an admissible set of members aborts or
+        is corrupted.
+
+    \item \emph{Public Verifiability}: stake pool formation and operation
+        should be publicly verifiable (\st consensus could take into account
+        the aggregate pool's stake).
+
+    \item \emph{Stake Reallocation}: users should freely change their
+        personal stake allocated to the pool, without interacting with other
+        members of the pool.
+
+    \item \emph{Parameter Updates}: an admissible set of parties should be
+        able to update the stake pool's parameters.
+
+    \item \emph{Force Removal}: an admissible set of parties should be able
+        to remove a member from the pool.
+
+    \item \emph{Pool Closing}: an admissible set of parties should be able to
+        permanently close the stake pool.
+
+    \item \emph{Prevention of Double Stake Allocation}: a party should not
+        simultaneously commit the same stake to two different stake pools.
+\end{itemize}

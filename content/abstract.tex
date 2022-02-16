@@ -1,0 +1,44 @@
+\begin{floating-abstract}
+    Distributed ledgers rose to prominence with the advent of Bitcoin, the
+    first provably secure protocol to solve consensus in an
+    open-participation setting. Following, active research and engineering
+    efforts have proposed a multitude of applications and alternative designs,
+    the most prominent being Proof-of-Stake (PoS). This thesis expands the
+    scope of secure and efficient asset management over a distributed ledger
+    around three axes:
+    \begin{inparaenum}[i)]
+        \item cryptography;
+        \item distributed systems;
+        \item game theory and economics.
+    \end{inparaenum}
+    % i) cryptography; ii) distributed ledgers; iii) game theory and economics.
+
+    First, we analyze the security of various wallets. We start with a
+    formal model of hardware wallets, followed by an analytical
+    framework of PoS wallets, each outlining the unique properties of
+    Proof-of-Work (PoW) and PoS respectively. The latter also provides a
+    rigorous design to form collaborative participating entities, called
+    stake pools. We then propose Conclave, a stake pool design which enables a
+    group of parties to participate in a PoS system in a collaborative manner,
+    without a central operator.
+
+    Second, we focus on efficiency. Decentralized systems are aimed at
+    thousands of users across the globe, so a rigorous design for minimizing
+    memory and storage consumption is a prerequisite for scalability.
+    To that end, we frame ledger maintenance as an optimization problem and
+    design a multi-tier framework for designing wallets which ensure that
+    updates increase the ledger's global state only to a minimal extent, while
+    preserving the security guarantees outlined in the security analysis.
+
+    Third, we explore incentive-compatibility and analyze blockchain systems
+    from a micro and a macroeconomic perspective. We enrich our cryptographic
+    and systems' results by analyzing the incentives of collective pools and
+    designing a state efficient Bitcoin fee function. We then analyze the Nash
+    dynamics of distributed ledgers, introducing a formal model that evaluates
+    whether rational, utility-maximizing participants are disincentivized from
+    exhibiting undesirable infractions, and highlighting the differences
+    between PoW and PoS-based ledgers, both in a standalone setting and under
+    external parameters, like market price fluctuations. We conclude by introducing a
+    macroeconomic principle, cryptocurrency egalitarianism, and then describing
+    two mechanisms for enabling taxation in blockchain-based currency systems.
+\end{floating-abstract}

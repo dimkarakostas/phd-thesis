@@ -1,0 +1,82 @@
+\section{UC Weighted Threshold Signature}\label{sec:uc-weighted-tss}
+
+In this section, we present the weighted threshold signature ideal functionality
+$\Fweight$ (Figure~\ref{fig:Fweight}). This functionality is used by the
+Collective Pool Protocol $\Ppool$ to collectively sign certificates and new
+blocks. The functionality $\Fweight$ is inspired by Almansa
+\etal~\cite{EC:AlmDamNie06}, which is in turn inspired by
+Canetti~\cite{EPRINT:Canetti03}. However, unlike Almansa \etal and similar to
+Canetti, during signature verification we consider the case of a corrupted
+signer, \ie a set of parties such that the majority (of weights) is corrupted.
+
+$\Fweight$ interacts with a set of $\totalParties$ parties. Each party
+$\party_i$ is associated with an integer $\weight_i$, \ie its weight.
+$\Fweight$ also keeps the following, initially empty, tables:
+\begin{inparaenum}[i)]
+    \item $\mathsf{pubkeys}$: tuples $\langle sid, \pubkey \rangle$ of $sid$
+        and a public key $\pubkey$;
+    \item $\mathsf{sigs}$: tuples $(m, \signature, \pubkey, f)$ of message
+        $m$, a signature $\signature$, a public key $\pubkey$, and a
+        verification bit $f$.
+\end{inparaenum}
+The mapping $\wfunc[\p] \rightarrow \weight_{\p}$ denotes the weight of a party
+$\p$, while the term $\wfunc$ also denotes the set of keys the participating
+parties.
+
+\myhalfbox{Weighted Threshold Signature Functionality $\Fweight$}{white!40}{white!10}{
+    Each message is associated with $sid = \langle \parties,
+    \wfunc, \thold, sid' \rangle$, where $\parties$ is the set of parties,
+    $\wfunc$ is a mapping of parties to weights, $\thold$ is the collective
+    signature weight threshold, and $sid'$ is a unique identifier.
+
+    \noindent{\bf Key Generation:}
+        Upon receiving $\msg{KeyGen}{}$ from every honest party $\party \in
+        \parties$, send $\msg{KeyGen}{\party}$ to $\iadv$. Upon receiving a
+        response $\msg{KeyGen}{\threshpubkey}$ from $\iadv$, record $\langle
+        sid, \threshpubkey \rangle$ to $\mathsf{pubkeys}$ and send
+        $\msg{KeyGen}{\threshpubkey}$ to every party in $\parties$. Following,
+        all messages that do not contain the established $sid$ are ignored.
+
+    \noindent{\bf Signature Generation:}
+        Upon receiving $\msg{Sign}{m}$ from a party $\p$, forward it to
+        $\iadv$. After a subset of parties $\parties' \subseteq \parties$ has
+        submitted a $\mathsf{Sign}$ message for the same $m$, and upon
+        receiving $\msg{Sign}{m, \signature}$ from $\iadv$, check that
+        $\sum_{\p \in \parties'} \wfunc[\p] > \thold$ (\emph{Note: This
+        condition guarantees threshold completeness.}) Next, if $(m,
+        \signature, \threshpubkey, 0) \not \in \mathsf{sigs}$ (for the key
+        $\threshpubkey$ that corresponds to $sid$ in $\mathsf{pubkeys}$),
+        record $(m, \signature, \threshpubkey, 1)$ to $\mathsf{sigs}$ and reply
+        with $\msg{Sign}{m, \signature}$.
+
+    \noindent{\bf Signature Verification:}
+        Upon receiving $\msg{Verify}{m, \signature, \threshpubkey'}$ from
+        $\party$, forward it to $\iadv$. Upon receiving $\msg{Verified}{m,
+        \signature, \phi}$ from $\iadv$, set $f$ as next:
+        \begin{enumerate}
+            \item If $\threshpubkey' = \threshpubkey$ and $(m, \signature,
+                \threshpubkey, 1) \in \mathsf{sigs}$, $f = 1$. (\emph{This
+                guarantees completeness.})
+            \item Else, if $\threshpubkey' = \threshpubkey$, the aggregate
+                weight of the corrupted parties in $\parties$ is strictly less
+                than $\thold$, and $(m, \signature, \threshpubkey, 1) \not \in
+                \mathsf{sigs}$, $f = 0$ and record $(m, \signature,
+                \threshpubkey, 0)$ to $\mathsf{sigs}$. (\emph{This guarantees
+                unforgeability, if the aggregate weight of the corrupted
+                parties is below the threshold.})
+            \item Else, if $(m, \signature, \threshpubkey', b) \in
+                \mathsf{sigs}$, $f = b$. (\emph{This
+                guarantees consistency.})
+            \item Else, $f = \phi$ and record $(m, \signature,
+                \threshpubkey', f)$ to $\mathsf{sigs}$.
+        \end{enumerate}
+        Finally, send $\msg{Verified}{m, \signature, \threshpubkey', f}$ to
+        $\party$.
+
+}{\label{fig:Fweight} Weighted Threshold Signature Ideal Functionality}
+
+As highlighted in the definition, \emph{completeness, consistency}, and
+\emph{unforgeability} are enforced upon verification, whereas \emph{threshold
+completeness} is enforced upon signature generation. Hence, it should be
+infeasible to issue a signature unless using keys with enough weight, \ie above
+the threshold $\thold$.

@@ -1,0 +1,169 @@
+\section{Cryptographic Primitives}
+
+Across the thesis we assume a peer-to-peer network, where parties use a gossip
+\emph{diffuse} functionality~\cite{EC:GarKiaLeo15}, without the need of a
+fully-connected graph and point-to-point connections. Consequently, when a
+party receives a message, they cannot know which party the message originated
+from.
+
+\paragraph{Synchronous Network}
+Under a synchronous network, a message produced by an honest party at round
+$\round$ is delivered as input to all other parties by at most round $\round +
+t$, where $t$ is a threshold known a priori to a protocol's designer. In the
+simplest case, when $t = 1$, each protocol round simulates a message passing
+round, \ie the maximum time required to deliver a message at any computer in
+the world; in blockchain analyses, the message passing round is typically equal
+to $10-20$ seconds~\cite{EC:GarKiaLeo15,wood2014ethereum}.
+
+\paragraph{Adversary}
+The adversary $\adversary$ is an algorithm that aims at breaking the security
+of the protocol under review, \ie violate one of its security properties.
+$\adversary$ is \emph{adaptive}, \ie can corrupt parties dynamically, and
+\emph{rushing}, \ie can decide its strategy after receiving, and possibly
+delaying, the honest parties' messages.
+
+\subsection{Cryptographic Hash Functions}
+
+Cryptographic hash functions, as in Damg{\aa}rd~\cite{EC:Damgaard87},
+exhibit the properties outlined in Definition~\ref{def:hash}.
+
+\begin{definition}[Hash Function]\label{def:hash}
+    A cryptographic hash function $\hash: \{0, 1\}^* \rightarrow \{0, 1\}^l$ is
+    a function that, for some $l$ which is the length of the hash values,
+    presents the following properties:
+    \begin{itemize}
+        \item \emph{Collision Resistance}:
+            Given $h \leftarrow \{0, 1\}^l$ it should be computationally
+            infeasible for a probabilistic polynomial algorithm to find a value
+            $x$ such that $h = \hash(x)$.
+        \item \emph{Pre-image resistance}:
+            It should be computationally infeasible for a probabilistic
+            polynomial algorithm to find two values $x, y$ where $x \neq y$
+            such that $\hash(x) = \hash(y)$.
+        \item \emph{Second pre-image resistance}:
+            Given a value $x$, it should be computationally infeasible for a
+            probabilistic polynomial algorithm to find a value $y \neq x$ such
+            that $\hash(x) = \hash(y)$.
+    \end{itemize}
+\end{definition}
+
+\subsection{Digital Signatures}\label{sec:secure_sig}
+
+A digital signature scheme $\sigscheme$, as in
+Canetti~\cite{EPRINT:Canetti03} and Goldwasser \emph{et
+al.}~\cite{C:GolMicRiv84}, is a triple of algorithms $\sigscheme = \langle
+\algokeygen, \algoverify, \algosign \rangle$, as described in Definition~\ref{def:digsign}.
+Following Definition~\ref{def:eufcma} describes a core property of signatures,
+which is resistance to Existential Unforgeability under Adaptive Chosen Message
+Attacks (\eufcma).
+
+\begin{definition}[Digital Signature]\label{def:digsign}
+    For a security parameter $\secparam$, a digital signature scheme $\sigscheme$
+    is a tuple $\digsign$:
+    \begin{itemize}
+        \item $\algokeygen(1^\secparam) \rightarrow (\keyverify, \keysign)$: a
+            randomized algorithm that, given the security parameter
+            $\secparam$, outputs a pair of keys, the verification key
+            $\keyverify$ and the $\secparam$-bit long private key $\keysign$;
+
+        \item $\algosign(\mesg, \keysign) \rightarrow \signature$: (possibly)
+            randomized algorithm that, given a message $\mesg$ and the private key
+            $\keysign$, outputs a signature $\signature$;
+
+        \item $\algover(\mesg, \keyverify, \signature) \rightarrow \{0,1\}$: a
+            deterministic algorithm that, given a message $\mesg$, a public key
+            $\keyverify$, and a signature $\signature$ outputs $1$ if a
+            signature is valid \wrt message $m$ and verification key
+            $\keyverify$ (respectively $0$ if the signature is invalid).
+    \end{itemize}
+\end{definition}
+
+\begin{definition}[EUFCMA]\label{def:eufcma}
+    A digital signature scheme $\sigscheme$ is Existentially Unforgeable under
+    Adaptive Chosen Message Attacks (\eufcma) if it presents the following
+    properties:
+
+    \begin{itemize}
+        \item \emph{Completeness}:
+            For any message $\mesg$, it holds:
+            \begin{align}
+                \Pr[(\keyverify, \keysign) \leftarrow \algokeygen(1^\secparam), \signature \leftarrow \algosign(\mesg, \keysign): 0 \leftarrow \algover(\mesg, \keyverify, \signature)]
+                \leq \negl \nonumber
+            \end{align}
+            where all probabilities are computed over the random coins of
+            the generation and sign algorithms.
+        \item \emph{Consistency}:
+            For any message $\mesg$, the probability that two independent
+            executions of $\algover(\mesg, \keyverify, \signature)$ for a key pair
+            $(\keyverify, \keysign) \leftarrow \algokeygen(1^\secparam)$,
+            output two different outcomes is smaller than $\negl$.
+        \item \emph{Unforgeability}:
+            For any PPT algorithm $\adv_{forger}$, which can query the
+            signature oracle $\algosign(\cdot, \keysign)$ for signatures on a
+            polynomial number of messages $\mesg_i$, it holds:
+            \begin{align}
+                \Pr\left[
+                (\keyverify, \keysign) \leftarrow \algokeygen(1^\secparam):
+                \begin{tabular}{c}
+                    $(\mesg, \signature) \leftarrow \adv_{forge}^{\algosign(\cdot, \keysign)} \wedge$ \\
+                    $\mesg \neq \mesg_i \wedge$ \\
+                    $\algover(\mesg, \keyverify, \signature) = 1]$ \\
+                \end{tabular}
+                \right]
+                \leq \negl(\secparam) \nonumber
+            \end{align}
+            where all the probabilities are computed over the random coins of
+            the generation algorithm and the adversary.
+    \end{itemize}
+\end{definition}
+
+\subsection{The Universal Composability Framework}
+
+The Universal Composability (UC) Framework by Canetti~\cite{FOCS:Canetti01} is
+a tool that enables us to capture the security properties of a distributed
+protocol. As a preparation for presenting the framework, consider two ensembles
+$X=\{X_{\secparam,z}\}_{\secparam \in \N, z\in\bits^*}$ and
+$Y=\{Y_{\secparam,z}\}_{\secparam \in \N, z\in\bits^*}$ of binary random
+variables. $X$ and $Y$ are said to be \emph{computationally indistinguishable},
+denoted by $X \cind Y$, if for all $z$ it holds that $\mid
+\Pr[\mc{D}(X_{\secparam,z})=1]-\Pr[\mc{D}(Y_{\secparam,z})=1]\mid$ is
+negligible in $\secparam$, \ie $\negl$, for every probabilistically
+polynomial-time (PPT) distinguishing algorithm $\mc{D}$.
+
+The main idea of security proofs under the UC framework relies on the
+comparison between the execution of a concrete protocol, say $\pi$, and a
+security definition, named the \emph{ideal functionality}. These two executions
+are, respectively, the \emph{real world} and the \emph{ideal world}. Both are
+controlled by an entity called the \emph{environment}, denoted by $\env$, which
+can submit actions and observe outputs from the executions. The environment
+controls the execution of $\pi$, through choosing the inputs of its
+participants, and also the actions of the adversary $\adv$ in the real world.
+We note that our work is restricted on executions where every party $\party \in
+\partySet$ is activated on each time slot. $\env$ also controls the activation
+schedule and the inputs of each party. The adversary $\adv$ can read the
+messages exchanged between the protocol players and even delay them, to a
+degree that depends on the network model. Moreover, it is allowed to corrupt
+players per the environment's instructions, in which case the player's secret
+state is compromised and is available to the adversary.
+
+More formally, every entity is modeled as a PPT Interactive Turing Machine
+(ITM), and the real world and ideal executions are respectively represented by
+the ensembles:
+\begin{align*}
+    \real=\ensereal
+\end{align*}
+and
+\begin{align*}
+    \ideal=\enseideal
+\end{align*}
+and uniform randomly chosen value $r$. We use $\real(\secparam,z,r)$ to denote
+the output of the environment $\env$ in the real-world execution of a protocol
+$\pi$ and the adversary $\adv$ under security parameter $\secparam$, input $z$
+and randomness $r$. Analogously, we denote by $\ideal(\secparam,z,r)$ the
+output of the environment in the ideal interaction between the simulator
+$\Iadv$ and the ideal functionality $\Fuc$ under security parameter
+$\secparam$, input $z$ and randomness $r$. It is said that \emph{the protocol
+$\pi$ securely realizes the functionality $\mc{F}$} when the environment
+cannot distinguish between the two worlds, \ie for every $\adv$ exists a
+simulator $\Iadv$ such that for every PPT $\env$ we have that
+$\real\cind\ideal$.

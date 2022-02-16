@@ -1,0 +1,53 @@
+\section{The Collective Stake Pool}\label{sec:stake-pool}
+
+Our analysis is based on the UC Framework, following Canetti's formulation of
+the ``real world''~\cite{EPRINT:Canetti00}. Specifically, we define the
+collective pool ideal functionality $\Fpool$, which distills the required
+(operational and security) properties; for readability, $\Fpool$ is divided in
+two parts, \emph{management} and \emph{consensus participation}. The ideal
+functionality is realized --- in the ``real world'' --- by the distributed
+protocol $\Ppool$, which employs various established cryptographic primitives,
+and, therefore, $\Ppool$ can described with auxiliary functionalities.
+Before proceeding with the functionality's definition, we first describe the
+hybrid execution of $\Ppool$ and its building blocks.
+
+\subsection{Hybrid Protocol Execution}\label{sec:execution}
+
+The protocol $\Ppool$ is performed by $n$ parties, where each party $\p_i$
+holds two pairs of keys: $(\keyverify_{\p_{i}}, \keysign_{\p_{i}})$ for issuing
+transactions, and $(\keyverify_{s_{i}}, \keysign_{s_{i}})$ for staking
+operations, \eg issuing delegation certificates (cf.~\cite{SCN:KarKiaLar20}). The
+public key $\keyverify_{i}$ is also used to generate an address $\addr_{i}$.
+Each pool member $\p_i$ pledges the funds of an address $\addr_{i}$ (which it
+owns) to the pool. These funds are the player's stake in the pool and form
+the player's weight in the weight distribution mapping $\wfunc$.
+
+We assume the members' stake, \ie their weight $\weight_{i}$ in the pool, is
+public. Therefore, the weight distribution mapping $\wfunc$ is also public.
+Furthermore, each member of the pool has its own signature key, and can issue
+standard signatures through a standard signature scheme.  A
+weighted version for a threshold signature scheme follows by having each party
+holding as many shares, of the original threshold scheme, as its weight. This
+approach has the extra advantage that security guarantees of the original
+scheme are carried straightforwardly into the weighted version.
+
+Additionally, our construction relies on the consensus sub-protocol $\Pconsensus$
+to validate a transaction by the elected committee.
+Specifically, the collective stake pool protocol is
+parameterized by:
+\begin{inparaenum}[i)]
+    \item the validation predicate $\algovalidate$,
+    \item the permutation algorithm $\permutationAlgo$, and
+    \item a consensus sub-protocol $\Pconsensus$.
+\end{inparaenum}
+
+Our (modular) protocol is described in a hybrid world with auxiliary
+functionalities for established primitives. The functionality
+$\Fbroad$~\cite{EC:HirZik10} provides a reliable broadcast channel to all parties;
+$\Fcore$ (cf. Chapter~\ref{chap:delegation}) enables delegation to the pool;
+$\Fweight$ (cf. Section~\ref{sec:uc-weighted-tss}) enables weighted threshold
+signature operations; the Smart Contract Functionality $\rewardFunc$ realizes
+the reward distribution mechanism; $\Gledger$ is a global Ledger
+Functionality~\cite{kachina}. Finally, we use $\hybpool$ to denote the $\{
+    \Gledger, \Fbroad, \Fcore, \Fweight, \rewardFunc \}$-hybrid execution of
+$\Ppool$ in the (global) UC Framework.

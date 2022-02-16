@@ -1,0 +1,55 @@
+\section{The General Desiderata Revisited}\label{sec:desiderata-revisited}
+We now discuss the General Desiderata from Section~\ref{sec:desiderata} with respect to $\FuncW$, the wallet and PoS protocol and the Core-Wallet Construction of Sections~\ref{sec:Protocol-funcWallet},~\ref{sec:address} and~\ref{sec:delegation-transaction}.
+
+We observe that the whole set of desiderata is in fact quite general. More concretely, even though some requirements can be captured by the core-wallet functionality $\FuncW$, others would depend on the inner workings of the implementation, as illustrated in the constructions of Sections~\ref{sec:address} and~\ref{sec:delegation-transaction}. Yet, others would depend on parameters or specifications of the protocol. Finally, a property somewhat orthogonal to these three dependencies, \ie \textit{Core-Wallet Functionality}, \textit{Wallet/PoS Protocol} and \textit{Core-Wallet Construction}, is {\bf Privacy and Unlinkability}, which is not achievable by the current design.
+
+% With the exception of the {\bf Privacy and Unlinkability} item, we summarize this discussion in Table~\ref{tab:layers}.
+
+\subsection{Desiderata Captured by $\FuncW$}
+
+$\FuncW$ allows a high level of flexibility regarding the generation of addresses. In particular, it offers a range of choices for the embedded information, \ie the list of attributes $\addresslist$, as well as the different address types. The former allows the addition of \textit{metadata} into the addresses, including keys for staking and spending and \textit{device and account identification tags}. The latter gives the ability to various players, \eg \textit{exchanges}, to operate using well-crafted, special-purpose addresses that fit special needs, while also bypassing the ``nothing at stake'' problem. {\bf Address Non-Malleability} is addressed during the address generation phase as described in detail in Section~\ref{subsec:malleability_predicate}.
+
+These features allow the functionality to embrace a wide range of the desiderata in Section~\ref{sec:desiderata}. Namely, the two types of keys for payment and staking cover the need for {\bf Staking and Spending Separation}, whereas {\bf Key Exposure Mitigation} is achieved by providing the flexibility to issue new delegation certificates using the staking action interface, in case the staking key of the delegate is compromised. {\bf Address Uniqueness} is addressed by the checks that the functionality performs upon receiving a possible address from the adversary. Furthermore, the flexibility on the definition of attributes allows for {\bf Multiple Devices Support} and {\bf Address Identification} by constructing special tags that become part of the address.
+
+The design of $\FuncW$ allows a clear separation between payment transactions and staking actions, like delegation or registration of a stake pool. However, the staking actions may still be published on the ledger for anybody to verify.  The staking and spending transaction are immediately differentiated  by the structure of payment transactions and staking actions, which are by definition different, so anybody can parse the ledger and identify the different types of transactions and staking actions. Furthermore, it is possible to verify {\bf the Delegation Verification} that pertains to an address by finding the delegation certificates that pertain to the staking key of that address. Another advantage of this design is that it offers a {\bf Cost Effective Delegation} mechanism, to assign and change a delegate when needed with the additional ``cost'' of only one transaction. The delegation mechanism also allows a party to prove that it has received the rights to append the ledger, so it gives the delegate the ability to  prove the right to append the ledger.
+
+Finally, our framework allows a smooth bootstrap delegation process which can be fulfilled by allowing an initial delegation assignment phase, which depends on the design of the system that uses $\FuncW$.
+
+\subsection{The Wallet/PoS Protocol Dependency}
+
+The functionality $\FuncW$ tackles the {\bf Chain Delegation Restriction} requirement partially, by allowing metadata in the staking action interface, which contain chain delegation rules. However, it is up to the protocol to impose an upper limit in the number of re-delegation assignments. Similarly, the {\bf Multiple Types of Addresses} desiderata also depend on how the protocol handles the different addresses supported by $\FuncW$. For example, a protocol that implements an \textit{auto delegation feature}, \ie given a long lack of activity of some address automatically assigns a delegate, can be used to satisfy {\bf Key Exposure Mitigation}.
+
+\subsection{The Core-Wallet Construction Dependency}
+
+{\bf Payment Key Information Safety} is achieved by the address generation mechanism, which uses the hash value of the payment key, instead of its plaintext form, when issuing the address. Furthermore, the concrete format of the address strings for all types is fully described by taking into account the details of the construction for each type. These inner workings cover the {\bf Short Address} item. Finally, the {\bf Account Master Key} can be implemented as described in detail in Section~\ref{sec:protocol-wallet}.
+
+\subsection{Privacy and Unlinkability}
+
+Even though an account's addresses can be obtained by allowing encrypted identification tags, \ie secure searchable encryption on the tags that can be used to link an account's addresses, the design of $\FuncW$ allows the adversary $\adv$ to choose the attributes. This process prevents the fulfillment of any type of privacy requirement. Therefore, our framework does not fulfill this requirement under the design of $\FuncW$.
+%
+% \begin{table}[]
+% \centering
+%
+% \label{table:}
+% \begin{tabular}{| c | l|}
+% \hline
+%   Core-Wallet Functionality &
+%  \begin{tabular}[c]{@{}l@{}}
+% {\bf Delegation/Spending Separation}\\ {\bf Key Exposure Mitigation} \\ {\bf Address Uniqueness}  \\ {\bf Multiple Devices Support} \\ {\bf Cost Effective Delegation} \\ {\bf Address Identification} \\ {\bf Right to append Proof} \\ {\bf Delegation/Payment Distinction} \\ {\bf Delegation Status Verification} \\ {\bf Smooth Bootstrap Delegation} \\
+% {\bf Address Non-malleability}
+% \end{tabular}    \\ \hline
+% Wallet/PoS
+% Protocol  &
+%  \begin{tabular}[c]{@{}l@{}}
+% {\bf Chain Delegation Restriction} \\ {\bf Active/Neutral Addresses}  \\ {\bf Key Loss Mitigation} \\ {\bf Stake Right Preservation}
+% \end{tabular}  \\ \hline
+% Wallet-Core
+% Construction &
+% \begin{tabular}[c]{@{}l@{}}
+%  {\bf Account Master Key} \\ {\bf Short Addresses} \\ {\bf Spending Key Information Safety}
+% \end{tabular}
+%  \\ \hline
+%
+% \end{tabular}
+% \caption{Desiderata in relation to the Core-Wallet Functionality, Wallet/PoS Protocol and Core-Wallet Construction.}\label{tab:layers}
+% \end{table}

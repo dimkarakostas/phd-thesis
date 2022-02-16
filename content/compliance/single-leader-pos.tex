@@ -1,0 +1,214 @@
+\subsubsection{Single-Leader Proof-of-Stake}\label{subsec:single-leader-pos}
+
+As before, we analyze a representative of a family of protocols, in
+this case the PoS protocol Ouroboros~\cite{C:KRDO17}.
+This family includes systems like
+EOS\footnote{\url{https://developers.eos.io/welcome/latest/protocol/consensus_protocol}},
+Steem\footnote{\url{https://steem.com/}}, and Ouroboros
+BFT~\cite{EPRINT:KiaRus18}.
+We again utilize the blockchain infraction predicates (cf.
+Definition~\ref{def:blockchain-infraction}).
+As shown in Section~\ref{sec:universal}, fair rewards do not necessarily
+guarantee compliance; as Ouroboros itself does not define rewards, we now
+consider the same block-proportional rewards (cf.
+Definition~\ref{def:proportional-rewards}) as Bitcoin (\ie fixed rewards per block).
+
+On each slot, Ouroboros defines a single party, the ``slot leader'', as
+eligible to create a valid message. Specifically, the protocol restricts that
+a leader cannot extend the chain with multiple blocks for the same slot,
+therefore all honest parties extend their chain by at most $1$ block per slot.
+The leader schedule is public and is computed at the
+beginning of each epoch via a secure, publicly verifiable Multi-Party
+Computation (MPC) sub-protocol, which cannot be biased by any single party. To
+prevent long-range attacks~\cite{buterin2014stake}, Ouroboros employs a form of
+rolling checkpoints (``a bounded-depth longest-chain rule''~\cite{C:KRDO17}),
+\ie a party ignores forks that stem from a block older than a
+(protocol-specific) limit from the adopted chain's head.
+
+Ouroboros is a representative of a family of protocols that demonstrates the following properties:
+\begin{itemize}
+    \item the execution is organized in epochs;
+    \item within each epoch, a single party (the \emph{leader}) is eligible to
+        produce a message per index;
+    \item a party which is online considers the blocks of each past epoch
+        finalized (\ie does not remove them in favor of a competing, albeit
+        possibly longer, chain);
+    \item no single party with power less than $\frac{1}{2}$ can bias the
+        epoch's leader schedule.
+\end{itemize}
+
+
+\paragraph{Synchronous network}
+First, we assume a synchronous network (cf.
+Section~\ref{sec:network-model}).
+Theorem~\ref{thm:compliant-ouroboros-synchronous} shows that Ouroboros with
+block-proportional rewards under synchronous networks is $(\epsilon,\infractionPredicate)$-compliant, $\infractionPredicate$ being any associated infraction predicate, for negligible $\epsilon$; this result is in line with the informal
+incentives' analysis of Ouroboros~\cite{C:KRDO17}.
+
+\begin{theorem}\label{thm:compliant-ouroboros-synchronous}
+    Assume
+    \begin{inparaenum}[i)]
+        \item a synchronous network (cf.
+            Section~\ref{sec:network-model}),
+        \item any associated infraction predicate $\infractionPredicate$, and
+        \item that $\forall \party \in \partySet: \miningpower_{\party} <$~$\frac{1}{2}$.
+    \end{inparaenum}
+    Ouroboros with block-proportional rewards (cf.
+    Definition~\ref{def:proportional-rewards}, for fixed block reward $\reward$) is $(\epsilon, \infractionPredicate)$-compliant (cf.
+    Definition~\ref{def:compliant}) \wrt utility \emph{Reward} (cf.
+    Definition~\ref{def:utility}) and,
+    if $\reward > \cost$, it is also $(\epsilon, \infractionPredicate)$-compliant
+    \wrt utility \emph{Profit}, in both cases for negligible $\epsilon$.
+\end{theorem}
+\begin{proof}
+    To prove the theorem, it suffices to show that, if the assumptions hold,
+    Ouroboros is an $\epsilon$-Nash equilibrium (cf. Proposition~\ref{prop:eq_comp}), \ie no
+    party can increase its reward more than $\epsilon$ by unilaterally deviating from the protocol, where $\epsilon=\mathsf{negl}(\secparam)$.
+
+    First, if all parties control a minority of staking power, no single
+    party can bias the slot leader schedule for any epoch (unless with $\mathsf{negl}(\secparam)$ probability). Therefore,
+    the (maximum) expected number of slots for which each party $\party$ is
+    leader is $\sum_{j \in [1, \epoch]} \epochLength \cdot
+    \miningpower_{\party,j}$, where $\miningpower_{\party,j}$ is the
+    percentage of staking power of $\party$ during the $j$-th epoch.
+
+    Second, if all parties follow $\proto$, then the total expected rewards for
+    each party $\party$ are $\reward \cdot \sum_{j \in [1, \epoch]}
+    \epochLength \cdot \miningpower_{\party,j}$. This is a direct consequence
+    of the network synchronicity assumption. Specifically, on slot $\slot$ the
+    (single) leader $\party$ creates exactly one block $\block$, which extends the longest
+    chain (adopted by $\party$).
+    At the beginning of slot $\slot + 1$, all other parties receive
+    $\block$ and, since $\block$ is now part of the (unique) longest chain, all
+    parties adopt it. Consequently, all following leaders will extend the chain
+    that contains $\block$, so eventually $\block$ will be in the chain output
+    by $\observer$.
+    Therefore, if all parties follow the protocol and no party can bias the
+    leader schedule, then no party can increase its expected rewards by
+    deviating from the protocol.
+
+    Regarding profit, a leader creates a block by performing a single
+    query to $\oracle_\proto$. Additionally, cost depends only on the number of
+    such queries. Therefore, if the cost of performing a single query is less
+    than $\reward$, then the profit per slot is larger than $0$, so abstaining
+    from even a single slot reduces the expected aggregate profit; therefore,
+    all parties are incentivized to participate in all slots.
+\end{proof}
+
+\paragraph{Lossy network}
+Second, we assume a lossy network (cf. Section~\ref{sec:lossy-network}).
+Theorem~\ref{thm:compliant-ouroboros-lossy} shows that Ouroboros with block
+proportional rewards is \emph{not} compliant \wrt the conflicting infraction
+predicate $\infractionPredicate_{conf}$; specifically, it shows that $\epsilon$
+is upper-bounded by a large value, which is typically non-negligible.
+
+\begin{theorem}\label{thm:compliant-ouroboros-lossy}
+    Assume
+    \begin{inparaenum}[i)]
+        \item a lossy network with (non-negligible) parameter
+            $\networkLossProb$ (cf. Section~\ref{sec:lossy-network}),
+        \item the conflicting infraction predicate $\infractionPredicate_{conf}$
+            (cf. Definition~\ref{def:blockchain-infraction}),
+        \item that $\forall \party' \in \partySet: \miningpower_{\party'} <
+            \frac{1}{2}$, and
+        \item that $\party$ is the party with maximum $\sum_{j \in [1, \epoch]} \miningpower_{\party, j}$ over all parties.
+    \end{inparaenum}
+
+    Ouroboros with block-proportional rewards (cf.
+    Definition~\ref{def:proportional-rewards}, for fixed block reward $\reward$) is \emph{not} $(\epsilon, \infractionPredicate_{conf})$-compliant (cf.
+    Definition~\ref{def:compliant}), \wrt utility \emph{Reward} for any
+    $\epsilon < \networkLossProb \cdot (1 - \networkLossProb)^2 \cdot \reward \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot \miningpower_{\party,j}$, and is also
+    \emph{not} $(\epsilon,
+    \infractionPredicate_{conf})$-compliant, \wrt utility \emph{Profit} for any
+    $\epsilon < (\networkLossProb \cdot (1 - \networkLossProb)^3 \cdot \reward - \cost) \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot \miningpower_{\party, j}$.
+\end{theorem}
+\begin{proof}
+    To prove the statement we define the following event $E$ for party
+    $\party$, when all parties follow $\proto$ and $\slot$ is a slot where
+    $\party$ is the leader. $\party$ extends its adopted longest chain $\chain$
+    with a new block $\block$. However, $\block$ is dropped, \ie it is not
+    delivered to any party $\party' \neq \party$; this occurs with probability
+    $\networkLossProb$, a parameter of the lossy network. Therefore, the leader
+    of slot $\slot+1$, who does not adopt $\block$, creates a different,
+    ``competing'' block $\block'$, which is not dropped (with probability
+    $1 - \networkLossProb$), thus all parties, except $\party$, adopt
+    $\block'$. Finally, on round $\slot+2$, the slot leader $\party'' \neq
+    \party$ produces a block $\block''$ which extends $\block'$ and $\block''$
+    is not dropped, therefore all parties -- including $\party$ adopt, on round
+    $\slot+3$, the -- now longest -- chain $\chain || \block' || \block''$.
+    The probability that $E$ occurs is $\networkLossProb \cdot (1 -
+    \networkLossProb)^2$, which is non-negligible. This follows from the fact
+    that the probability that each block is dropped is independent.
+    So, the expected rewards of
+    $\party$ when everyone follows $\proto$ are at most
+    $(1 - \networkLossProb \cdot (1 - \networkLossProb)^2) \cdot \reward \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot \miningpower_{\party,j}$.
+    However, as described above, the maximum rewards are
+    $\reward \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot \miningpower_{\party,j}$, \ie they are strictly larger.
+
+    Now, consider the following strategy $\strategy$. When party $\party$
+    is the slot leader, it creates $t$ messages, all extending its
+    adopted longest chain; in other words, $\party$ forks the chain by
+    producing $t$ competing blocks. Clearly, as long as at least one of the $t$
+    blocks is delivered, event $E$ will not occur, the leader of slot $\slot+1$
+    will adopt one of the blocks created by $\party$ and, eventually, $\party$
+    will receive the rewards that correspond to slot $\slot$. The probability
+    that all $t$ blocks are dropped is $\networkLossProb^t$, while the expected rewards are
+    $(1 - \networkLossProb^t \cdot (1 - \networkLossProb)^2) \cdot \reward \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot \miningpower_{\party,j}$.
+    As $t$ increases, this probability tends to $0$ and the party's expected
+    rewards tend to the maximum value $\reward \cdot \sum_{j \in [1, \epoch]}
+    \epochLength \cdot \miningpower_{\party,j}$.
+
+    Therefore, for utility \emph{Reward}, the profile
+    $\profile_{\party, \strategy}$, under which all parties except $\party$
+    employ $\proto$ and $\party$ employs $\strategy$, is directly reachable
+    (cf. Definition~\ref{def:reach}) from the ``all honest'' profile
+    $\profile_\proto$. Hence, since $\strategy$ is non-compliant, so is
+    $\proto$, for values of $\epsilon < $.
+    $\reward \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot \miningpower_{\party,j} - (1 - \networkLossProb \cdot (1 - \networkLossProb)^2) \cdot \reward \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot \miningpower_{\party,j} = \networkLossProb \cdot (1 - \networkLossProb)^2 \cdot \reward \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot \miningpower_{\party,j}$.
+
+    Regarding cost, we consider the party $\party$ with the maximum power
+    across the execution and the case when $t = 2$, \ie the simplest case of
+    non-compliant deviation. The expected rewards of $\party$ are
+    $(1 - \networkLossProb^2 \cdot (1 - \networkLossProb)^2) \cdot \reward \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot \miningpower_{\party,j}$,
+    therefore its reward increase (instead of employing $\proto$) is
+    $( (1 - \networkLossProb^2 \cdot (1 - \networkLossProb)^2) - (1 - \networkLossProb \cdot (1 - \networkLossProb)^2)) \cdot \reward \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot \miningpower_{\party,j} =
+    \networkLossProb \cdot (1 - \networkLossProb)^3 \cdot \reward \cdot \sum_{j \in [1, \epoch]} \epochLength \cdot \miningpower_{\party,j}$.
+    Hence, given a cost $\cost$ per query, if the aggregate cost for performing
+    these extra queries to $\oracle_\proto$ is less than this gain, $\party$ is
+    incentivized to deviate so.
+\end{proof}
+
+The lossy network analysis is particularly of interest, because it manifested
+in practice. On December 2019, Cardano released its Incentivized Testnet
+(ITN)\footnote{\url{https://staking.cardano.org/}}. On the ITN, Cardano
+stakeholders, \ie users who owned Cardano's currency, participated in PoS by
+forming stake pools which produced blocks. The ITN used proportional rewards
+and the execution followed the Ouroboros model of epochs and slots.
+Specifically, each pool was elected as a slot leader proportionally to its
+stake and received its proportional share of an epoch's rewards based on its
+\emph{performance}, \ie the number of produced blocks compared to the number of
+\emph{expected} blocks it should have produced. This incentivized pool
+operators to actively avoid abstaining, \ie failing to produce a block when
+elected as slot leader. However, forks started to form while the network was
+unstable and lossy. This incentivized pools\footnote{For a (heated) discussion
+on this issue see Reddit:
+\url{https://www.reddit.com/r/cardano/comments/ekncza}} to ``clone'' their
+nodes, \ie run multiple node instances in parallel, thus increasing network
+connectivity, reducing packet loss, but also extending all possible forks. To
+make matters worse, this solution not only perpetuated forks but also created
+new ones, as clones would not coordinate and produced different blocks, even
+when extending the same chain.
+
+\begin{remark*}
+Although a lossy network may render a PoS protocol
+non-compliant, the same does not hold for PoW ledgers. As described in the
+proof of Theorem~\ref{thm:compliant-ouroboros-lossy}, a party produces multiple
+blocks per slot to maximize the probability that one of them is eventually
+output by $\observer$. Notably, since the PoS protocol restricts that at most
+one block extends the longest chain per slot, these blocks are necessarily
+conflicting. However, PoW ledgers do not enforce such restriction; therefore, a
+party would instead create multiple consecutive (instead of parallel,
+conflicting) blocks, as covered in the proof of
+Theorem~\ref{thm:bitcoin_eq_approx}, which yields maximal expected rewards even
+under a lossy network.
+\end{remark*}

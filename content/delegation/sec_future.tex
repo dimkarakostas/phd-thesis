@@ -1,0 +1,45 @@
+\section{Discussion}\label{sec:future}
+
+Our framework offers a range of choices for embedding information in PoS
+addresses, as well as enabling multiple address types.  The former allows the
+addition of \emph{metadata} into the addresses, including keys for staking and
+spending and \emph{device and account identification tags}. The latter gives
+the ability to various players, \eg enterprises such as exchanges, to operate
+using well-crafted, special-purpose addresses that are fit for special needs.
+These features embrace a wide range of the desiderata outlined in
+Section~\ref{sec:desiderata-delegation}. \emph{Address Non-Malleability} is addressed
+during the address generation phase, described in detail in
+Section~\ref{subsec:malleability_predicate}. Moreover, the two types of keys,
+for payment and staking, cover the need for \emph{Staking and Spending
+Separation}, whereas \emph{Key Exposure Mitigation} is achieved by providing
+the flexibility to issue new delegation certificates using the ``staking
+action'' interface, in case the staking key of the delegate is compromised.
+\emph{Address Uniqueness} is addressed by the checks that the functionality
+performs upon receiving a possible address from the adversary. Additionally,
+the flexibility on defining attributes allows for \emph{Multiple Devices
+Support} and \emph{Address Recovery}, by constructing special tags that are
+embedded in the address. Furthermore, \emph{Delegation Verification} is
+possible by obtaining the delegation certificates that pertain to its staking
+key. Another advantage of this design is the \emph{Cost Effectiveness} of the
+delegation mechanism, assigning and changing a delegate at the cost of only one
+transaction. The delegation mechanism also allows a party to prove that it has
+the right to append the ledger, although possibly restricting \emph{Chain
+Delegation}. Finally, our framework enables a smooth \emph{bootstrapping}
+delegation process, by allowing an initial delegation assignment phase which
+depends on the implementation details of the ledger.
+
+Notably, our desiderata revolve primarily around key management and address
+generation. Therefore, we don't capture network reliability or availability
+requirements, but rather assume an abstract ledger model, which satisfies
+persistence and liveness in a synchronous setting. This allows us to focus on
+address and signature generation, while treating the other components of the
+system as black boxes, which presumably satisfy the required properties. This
+is evident in Section~\ref{sec:delegation-transaction}, which assumes a generic
+ledger model, abstracted as a set of variables and algorithms. Nonetheless, a
+more rigorous analysis on the incorporation of our wallet core in a complete
+wallet is an important next step. Such treatment could formally capture
+security on all layers, \ie key management, consensus, network, \etc A possible
+path towards this goal could propose a variant of $\FuncW$ with key-evolving
+signatures, which would replace $\mc{F}_{\mathsf{KES}}$ in a protocol like
+Ouroboros Praos~\cite{EC:DGKR18}, followed by a rigorous proof of security of
+this consensus protocol variant.

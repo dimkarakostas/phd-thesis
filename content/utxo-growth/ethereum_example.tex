@@ -1,0 +1,49 @@
+\subsection{Ethereum's State Efficiency}\label{sec:ethereum-fees}
+\comment{TODO: fix}
+
+Ethereum's fee model is more well-defined than Bitcoin's. In Ethereum, each
+operation is associated with a fee, which is evaluated in gas\comment{TODO: preliminaries}. Different
+operations cost different amounts of gas, with operations that use storage in
+the ledger being more expensive.  Ethereum partially incentivizes proper state
+management by offering discounts for cleaning unused variables. Specifically,
+an operation that removes a variable or a smart contract from the global state
+increases the ``refund balance'' of the transaction. At the end of the
+transaction's execution, the account get a refund in gas fees equal to the
+refund balance, capped to a maximum of half the total gas
+used~\cite{wood2014ethereum}.
+
+Ethereum's fee policy incentivizes proper state management in two ways.  First,
+it disincentivizes unnecessary increase of the global state by enforcing high
+fees on operations that do so. Second, it incentivizes removing items from the
+global state, \ie reducing it, via the gas refund mechanism. However, this
+policy is not ideal, as showcased in the following example.
+
+Assume an account $A$ creates a smart contract $S$. To deploy $S$, $A$ needs to
+create and publish a transaction which contains $S$'s code. The gas fees of
+this transaction depend on both
+\begin{inparaenum}[a)]
+    \item the length of the contract's code (in bytes) and
+    \item the operations performed by the contract's constructor, \eg creating
+        global contract variables.
+\end{inparaenum}
+
+A contract can be permanently deleted via the $\mathsf{selfdestruct}$ opcode.
+This opcode removes the contract from the state, transfers its balance to a
+provided address, and refunds the user who calls it with $19.000$
+gas\footnote{The refund is given only if the contract's balance is transferred
+to an existing account. If it is transferred to an account with $0$ preexisting
+balance, then the $\mathsf{selfdestruct}$ operation costs $30.000$ gas.
+Finally, the $\mathsf{selfdestruct}$ operation costs less than the
+$\mathsf{transfer}$ operation to incentivize its usage.}.
+
+However, including $\mathsf{selfdestruct}$ incurs a cost on the contract's
+creator. Specifically, this single line of code costs $15.000$ gas. Therefore,
+if the contract's creator is not the party that runs $\mathsf{selfdestruct}$,
+then the former has no incentive to include this operation and incur the cost
+of this line of code.
+
+Eventually $S$ reaches the end of its lifetime. Assume that, after its
+functionality is completed, the only remaining operation that can be performed
+is $\mathsf{selfdestruct}$. Observe that the $\mathsf{selfdestruct}$ refund is
+at most half of the transaction's cost. In that case, no party has incentive to
+destroy the contract and incur the (discounted) cost of the transaction.

@@ -1,0 +1,73 @@
+\subsection{Modes of Execution}\label{sec:wallet-modes}
+
+Our final contribution is a set of modes of operation of a PoS wallet.
+
+\paragraph{Regular}
+This being most straightforward wallet deployment method, a regular wallet is
+bootstrapped with a \emph{base} address $\addr_0$ and its stake is managed by a
+key $\stakingkeypair$. After $\addr_0$ receives its first assets, the wallet
+may perform staking actions by using $\stakingkeypair$. To perform staking on
+its own, the wallet publishes a delegation certificate $\Sigma$ that delegates
+to its own key $\stakingkeypair$. Subsequent addresses are pointer addresses to
+$\Sigma$, so eventually all addresses are managed by the same staking key.
+When the user wishes to delegate to a staking pool, identified by the key
+$\stakingkeyverify_P$, the wallet simply publishes a certificate $\Sigma_d$
+delegating from $\stakingkeyverify$ to $\stakingkeyverify_P$.
+
+\paragraph{Offline with Cold Staking}
+This wallet lives in an offline device, \eg on paper. It is rarely accessed for
+payments, but regularly performs staking actions. It is bootstrapped similarly
+to the regular wallet and, since its payment keys are stored offline, the
+staking keys are managed as follows:
+\begin{itemize}
+    \item \emph{basic security}: the staking key $\stakingkeypair$, which
+        manages all addresses, is online; in case $\stakingkeysign$ is
+        compromised, the user accesses the payment keys and sends the funds to
+        new addresses, controlled by a new staking key;
+    \item \emph{enhanced security}: the wallet creates a certificate
+        $\Sigma^\prime$, which delegates from $\stakingkeyverify$ to the
+        ``hot'' key $\stakingkeyverify_h$; after $\Sigma^\prime$ is published,
+        the user stores $\stakingkeypair$ offline and $(\stakingkeyverify_h,
+        \stakingkeysign_h)$ online; in case $(\stakingkeyverify_h,
+        \stakingkeysign_h)$ is compromised, $\stakingkeypair$ is used to
+        delegate to a new ``hot'' key, without requiring access to the wallet's
+        payment keys.
+\end{itemize}
+
+\paragraph{Enhanced Unlinkability of Addresses}
+This wallet aims at a higher level of privacy, with each address managed by a
+single staking key. Therefore, to change its delegation profile, the wallet
+creates a certificate for each address. Additionally, it achieves different
+security guarantees as follows:
+\begin{itemize}
+    \item \emph{online:} the wallet is online and creates only pointer
+        addresses, which point to the stake pool's registration certificate; to
+        re-delegate, it creates new pointer addresses and moves the funds from
+        the old to the new addresses;
+    \item \emph{offline:} the payment keys are stored offline, so the wallet
+        creates base addresses, each managed by a unique staking key, and keeps
+        the staking keys online; to re-delegate, it publishes a new certificate
+        for each address.
+\end{itemize}
+
+\paragraph{The Stake Pool's Wallet}
+A stake pool's wallet performs only staking actions, so its key
+$(\stakingkeyverify_P, \stakingkeysign_P)$ is managed as follows:
+\begin{itemize}
+    \item \emph{basic security}: the key pair $(\stakingkeyverify_P, \stakingkeysign_P)$
+        is stored online and is used directly for staking; in case of
+        compromise, the wallet creates a new staking key while, for practical
+        purposes, an alert mechanism should exist to notify the users to
+        re-delegate their stake to the new key;
+    \item \emph{enhanced security}: the wallet creates a lightweight
+        certificate $\Sigma_l$, which delegates to a ``hot'' key
+        $\stakingkeyverify_{Ph}$, and then stores $(\stakingkeyverify_P,
+        \stakingkeysign_P)$ offline, while using $(\stakingkeyverify_{Ph}, \stakingkeysign_{Ph})$ and
+        $\Sigma_l$ for staking; if $(\stakingkeyverify_{Ph}, \stakingkeysign_{Ph})$ is compromised, the
+        wallet creates a new hot key $(\stakingkeyverify_{Ph}^\prime, \stakingkeysign_{Ph}^\prime)$ and a new
+        lightweight certificate $\Sigma_l^\prime$, which delegates from
+        $(\stakingkeyverify_{P}, \stakingkeysign_{P})$ to $\stakingkeyverify_{Ph}^\prime$ and includes a
+        higher counter compared to $\Sigma_l$, using them for staking instead.
+\end{itemize}
+We note that, in particular, the stake pool's wallet is further explored in the
+upcoming chapter on collective stake pools.

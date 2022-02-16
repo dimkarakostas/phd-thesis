@@ -1,0 +1,80 @@
+\section{The Setting}
+
+We consider a distributed protocol $\proto$, which is executed by all parties in
+a set $\partySet$, and which is performed over a number of time slots. Our
+analysis is restricted on executions where every party $\party \in \partySet$
+is activated on each time slot. The activation is scheduled by an environment
+$\env$, which also provides the parties with inputs.
+
+We use $\secparam$ to denote $\proto$'s security parameter, and
+$\mathsf{negl}(\cdot)$ to denote that a function is negligible, i.e.,
+asymptotically smaller than the inverse of any polynomial. By $[n]$, we denote
+the set $\{1,\ldots,n\}$. The expectation of a random variable $X$ is denoted
+by $E[X]$.
+
+\subsection{Network Model}\label{sec:network-model}
+
+We assume a peer-to-peer network. Specifically, parties do not communicate via
+point-to-point connections, but rather use a variant of the \emph{diffuse}
+functionality defined in~\cite{EC:GarKiaLeo15}, described as follows.
+
+\paragraph{Diffuse Functionality}\label{par:diffuse}
+The functionality initializes a variable $\emph{slot}$ to $1$, which is
+readable from all parties. In addition, it maintains a string
+$\textsc{Receive}_{\party}()$ for each party $\party$. Each party $\party$ is
+allowed to fetch the contents of $\textsc{Receive}_{\party}()$ at the beginning
+of each time slot. To diffuse a (possibly empty) message $\mesg$, $\party$
+sends to the functionality $\mesg$ and an integer index $i_\mesg$, which
+indicates the message delivery priority of $\mesg$ (see below). In turn,
+the functionality records $\mesg$ and $i_\mesg$. On each slot, every party completes its
+activity by sending a special $\textsc{Complete}$ message to the functionality.
+When all parties submit $\textsc{Complete}$, the functionality delivers the
+messages, which are diffused during this slot, as follows.  First, it groups
+all messages based on their associated index and sorts them, with messages with
+smaller index having higher priority. Then, it randomizes the order of each
+group's messages, \ie which are associated with the same index.  Therefore,
+eventually all messages are sorted in a well-defined order.  Subsequently, the
+functionality includes all messages in the $\textsc{Receive}_{\party}()$ string
+of every party $\party \in \partySet$, following the aforementioned order.
+Hence, all parties receive all diffused messages, without any information
+on each message's creator. Finally, the functionality increases the value of $\emph{slot}$
+by $1$.
+
+\paragraph{Lossy Diffuse Functionality}\label{sec:lossy-network}
+The lossy diffuse functionality is similar to the above variant, with one
+difference: it is parameterized with a probability $\networkLossProb$, which
+defines the probability that a message $\mesg$ is dropped, \ie it is not
+delivered to any recipient. This functionality aims to model the setting where
+a network with stochastic delays is used by an application, where users reject
+messages which are delivered with delay above a (protocol-specific) limit. For
+example, various protocols, like Bitcoin~\cite{nakamoto2008bitcoin}, resolve
+message conflicts based on the order of delivery; thus, delaying a message for
+long enough, such that a competing message is delivered beforehand, is
+equivalent to dropping the message altogether.
+
+\subsection{Approximate Nash Equilibrium}\label{sec:equilibrium}
+
+An approximate Nash equilibrium is a common tool for expressing a solution to a
+non-cooperative game involving $\totalParties$ parties $\party_1,\ldots,\party_n$. Each party $\party_i$
+employs a strategy $\strategy_i$. The strategy is a set of rules and actions
+the party makes, depending on what has happened up to any point in the game,
+\ie it defines the part of the entire distributed protocol $\proto$ performed
+by $\party_i$. There exists an ``honest'' strategy, defined by $\proto$, which
+parties may employ; for ease of notation,
+$\proto$ denotes both the distributed protocol and the honest strategy.
+A \emph{strategy profile} is a vector of all players' strategies.
+
+Each party $\party_i$ has a game \emph{utility} $\utility_i$, which is a real
+function that takes as input a strategy profile. A strategy profile is an
+$\epsilon$-Nash equilibrium when no party can increase its utility more than
+$\epsilon$ by \emph{unilaterally} changing its strategy
+(Definition~\ref{def:equilibrium}).
+
+\begin{definition}\label{def:equilibrium}
+    Let $\epsilon$ be a non-negative real number and $\strategySet$ be the set of all strategies a party may employ.
+    Also let $\profile^* = (\strategy^*_i, \strategy^*_{-i})$ be a strategy profile of
+    $\partySet$, where $\strategy^*_i$ is the strategy followed by $\party_i$ and $\strategy^*_{-i}$ denotes the $\totalParties - 1$
+    strategies employed by all parties except $\party_i$. We say that
+    $\profile^*$ is an \emph{$\epsilon$-Nash equilibrium} \wrt a utility vector $\bar{\utility} = \langle \utility_1, \ldots, \utility_\totalParties \rangle$ if:
+    $$\forall \party_i \in \partySet \; \forall \strategy_i \in \strategySet \setminus \{ \strategy^*_i \} : \utility_i(\strategy^*_i, \strategy^*_{-i}) \geq \utility_i(\strategy_i, \strategy^*_{-i}) - \epsilon$$
+\end{definition}

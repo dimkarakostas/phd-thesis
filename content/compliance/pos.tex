@@ -1,0 +1,37 @@
+\subsection{Proof-of-Stake}\label{subsec:pos}
+
+Proof-of-Stake (PoS) systems differ from Bitcoin in a few points. Typically, the
+execution of such systems is organized in \emph{epochs}, each consisting of a
+fixed number $\epochLength$ of time slots. On each slot, a specified set of
+parties is eligible to participate in the protocol. Depending on the protocol,
+the leader schedule of each epoch may or may not be a priori public.
+
+The core difference from PoW concerns the power $\miningpower_{\party}$ of each
+party. In PoS, $\miningpower_{\party}$ represents their \emph{stake} in the
+system, \ie the number of coins, that $\party$ owns. Stake is dynamic,
+therefore the system's coins may change hands and the leader schedule of each
+epoch depends on the stake distribution at the beginning of the
+epoch.\footnote{In reality, the snapshot of the stake distribution is retrieved
+at an earlier point of the previous epoch, but we can employ this simplified
+version without loss of generality} As with Bitcoin, each party participates
+proportionally to their power, so, on expectation, the ratio of slots for which
+$\party$ is leader, over the total number of the epoch's slots, is
+$\miningpower_{\party}$.
+
+Moreover, in PoS protocols, the oracle $\oracle_\proto$ does not perform hashing
+as in Bitcoin. Instead, it is parameterized by the leader schedule and
+typically performs signing. The signature output by $\oracle_\proto$ is valid
+if and only if the input message is submitted by the leader of the slot, during
+which $\oracle_\proto$ is responding. This introduces two important
+consequences: i) only the slot leader can produce valid messages during a
+given slot; ii) the leader can produce as many valid messages as the number
+of possible queries to $\oracle_\proto$.
+
+In the upcoming paragraphs we use the following notation:
+\begin{itemize}
+    \item $\cost$: the cost of a single query to $\oracle_\proto$;
+    \item $\reward$: the (fixed) reward per block;
+    \item $\epoch$: the number of epochs in an execution;
+    \item $\epochLength$: the number of slots per epoch;
+    \item $\miningpower_{\party, j}$: the power of party $\party$ on epoch $j$.
+\end{itemize}

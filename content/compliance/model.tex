@@ -1,0 +1,188 @@
+\section{Compliance Model}\label{sec:model}
+
+We assume a distributed protocol $\proto$, which is performed by a set of
+parties $\partySet$ over a number of time slots.
+In our analysis, each party $\party \in \partySet$ is associated with
+a number $\miningpower_{\party} \in [0, 1]$. $\miningpower_{\party}$ identifies
+$\party$'s percentage of participation power in the protocol, \eg its votes,
+hashing power, staking power, \etc; consequently, $\sum_{\party \in \partySet}
+\miningpower_{\party} = 1$.
+
+\subsection{Basic Notions}\label{subsec:basic}
+A protocol's execution $\execution_{\env, \sigma, \slot}$ at a given time slot
+$\slot$ is probabilistic and parameterized by the environment $\env$ and the
+strategy profile $\sigma$ of the participating parties. As discussed, $\env$
+provides the parties with inputs and schedules their activation. For notation
+simplicity, when $\slot$ is omitted, $\execution_{\env, \sigma}$ refers to the
+end of the execution, which occurs after polynomially many time slots.
+
+An \emph{execution trace} $\executionTrace_{\env, \sigma, \slot}$ on a time slot
+$\slot$ is the value that the random variable $\execution_{\env, \sigma, \slot}$ takes for a fixed
+environment $\env$ and strategy profile $\sigma$, and for fixed random coins of
+$\env$, each party $\party \in \partySet$, and every
+protocol-specific oracle (see below). A party $\party$'s view of an
+execution trace $\executionTrace_{\env, \sigma, \slot}^{\party}$ consists of
+the messages that $\party$ has sent and received until slot $\slot$. For
+notation simplicity, we will omit the subscripts $\{ \env,
+\sigma, \slot \}$ from both $\execution$ and $\executionTrace$, unless
+required for clarity.\smallskip
+
+The protocol $\proto$ defines two components, which are related to our
+analysis: (1) the oracle $\oracle_\proto$, and (2) the ``infraction'' predicate
+$\infractionPredicate$. We present these two components below.
+
+\paragraph{The Oracle $\oracle_\proto$}
+The oracle $\oracle_\proto$ provides the parties with the core functionality
+needed to participate in $\proto$. For example, in a Proof-of-Work (PoW) system
+$\oracle_\proto$ is the random or hashing oracle, whereas in an authenticated
+Byzantine Agreement protocol $\oracle_\proto$ is a signing oracle. On each time
+slot, a party can perform at most a polynomial number of queries to
+$\oracle_\proto$; in the simplest case, each party can submit a single query
+per slot. Finally, $\oracle_\proto$ is \emph{stateless}, \ie its random coins
+are decided upon the beginning of the execution and its responses do not depend
+on the order of the queries.
+
+\paragraph{The Infraction Predicate $\infractionPredicate$}
+The infraction predicate $\infractionPredicate$ abstracts the
+deviant behavior that the analysis aims to capture. Specifically,
+$\infractionPredicate$, when given the execution trace and a party $\party$,
+responds with $1$ only if $\party$ deviates from the protocol in some
+well-defined manner. Definition~\ref{def:infraction-predicate} provides the
+core generic property of $\infractionPredicate$, \ie that honest
+parties never deviate. For ease of notation, we will next simply write $\infractionPredicate$ unless required for clarity.
+With hindsight, our analysis will
+focus on infraction predicates that capture either producing conflicting
+messages or abstaining from the protocol.
+
+\begin{definition}[Infraction Predicate Property]\label{def:infraction-predicate}
+    The infraction predicate $\infractionPredicate$ has the property that, for
+    every execution trace $\executionTrace$ and for every party $\party \in
+    \partySet$, if $\party$ employs the (honest) strategy $\proto$ then
+    $\infractionPredicate(\executionTrace, \party) = 0$.
+\end{definition}
+
+We stress that Definition~\ref{def:infraction-predicate} implies that
+$\infractionPredicate$ being $0$ is a necessary, but \emph{not} a sufficient
+condition, for a party to be honest. Specifically, for all honest parties
+$\infractionPredicate$ is always $0$, but $\infractionPredicate$ might
+also be $0$ for a party that deviates from $\proto$, in such way that is not
+captured by $\infractionPredicate$. In that case, we say that the party employs
+an $\compliant$ strategy (Definition~\ref{def:compliant-strategy}). A strategy
+profile is $\compliant$ if all of its strategies are $\compliant$; naturally,
+the ``all honest'' profile $\profile_\proto$, \ie when all parties employ
+$\proto$, is -- by definition -- $\compliant$.
+
+\begin{definition}[Compliant Strategy]\label{def:compliant-strategy}
+    Let $\infractionPredicate$ be an infraction predicate. A strategy $\strategy$ is
+    \emph{$\mathcal{X}$-compliant} if and only if $\infractionPredicate(\executionTrace, \party) =
+    0$ for every party $\party$ and for every trace $\executionTrace$ where $\party$ employs $\strategy$.
+\end{definition}
+
+\paragraph{The observer $\observer$}
+We assume a special party $\observer$, the \emph{(passive)
+observer}. This party does not actively participate in the execution, but it
+runs $\proto$ and observes the protocol's execution. Notably, $\observer$ is
+\emph{always online}, \ie it bootstraps at the beginning of the execution and
+is activated on every slot, in order to receive diffused messages. Therefore,
+the observer models a user of the system, who frequently uses the system but
+does not actively participate in its maintenance. Additionally, at the last
+round of the execution, the environment $\env$ activates only $\observer$, in
+order to receive the diffused messages of the penultimate round and have a
+complete point of view.
+
+As mentioned in Section~\ref{sec:equilibrium}, we assume a utility $\utility_i$ for every party $\party_i$, so the utility vector defines the payoff values for
+each party. In our examples, a party's utility depends on two parameters:
+\begin{inparaenum}[i)]
+    \item the party's rewards, which are distributed by the protocol, from the
+        point of view of $\observer$;
+    \item the cost of participation.
+\end{inparaenum}
+
+\subsection{Compliant Protocols}\label{subsec:compliant}
+
+To define the notion of an $(\epsilon, \infractionPredicate)$-compliant protocol
+$\proto$, we require two parameters:
+\begin{inparaenum}[(i)]
+    \item the associated infraction predicate $\infractionPredicate$ and
+    \item a non-negative real number $\epsilon$.
+\end{inparaenum}
+Following Definition~\ref{def:compliant-strategy}, $\infractionPredicate$
+determines the set of compliant strategies that the parties may follow in
+$\proto$. Intuitively, $\epsilon$ specifies the sufficient gain threshold after which a party
+switches strategies. In particular, $\epsilon$ is
+used to define when a strategy profile $\sigma'$ is \emph{directly reachable}
+from a strategy profile $\sigma$, in the sense that $\sigma'$ results from the
+unilateral deviation of a party $\party_i$ from $\sigma$ and, by this
+deviation, the utility of $\party_i$ increases more than $\epsilon$.
+Generally, $\sigma'$ is \emph{reachable} from $\sigma$, if $\sigma'$ results
+from a ``path'' of strategy profiles, starting from $\sigma$, which are
+sequentially related via direct reachability. Finally, we define the \emph{cone}
+of a profile $\sigma$ as the set of all strategies that are
+reachable from $\sigma$, including $\sigma$ itself.
+
+Given the above definitions, we say that $\proto$ is
+$(\epsilon,\mathcal{X})$-compliant if the cone of the ``all honest'' strategy
+profile $\profile_\proto$ contains only profiles that consist of $\compliant$
+strategies. Thus, if a protocol is compliant, then the parties may
+(unilaterally) deviate from the honest strategy only in a compliant manner, as
+dictated by $\infractionPredicate$.
+
+Formally, first we define ``reachability'' between two strategy profiles, as
+well as the notion of a ``cone'' of a strategy profile \wrt the reachability
+relation, and then we define a compliant protocol \wrt its associated
+infraction predicate.
+
+\begin{definition}\label{def:reach}
+    Let:
+    \begin{inparaenum}[i)]
+        \item $\epsilon$ be a non-negative real number;
+        \item $\proto$ be a protocol run by parties $\party_1, \ldots, \party_\totalParties$;
+        \item $\bar{\utility}=\langle \utility_1, \ldots, \utility_\totalParties \rangle$ be a utility vector, where $\utility_i$ is the utility of $\party_i$;
+        \item $\strategySet$ be the set of all strategies a party may employ.
+    \end{inparaenum}
+    We provide the following definitions.
+    \begin{enumerate}
+        \item Let $\profile, \profile' \in \strategySet^\totalParties$ be two strategy profiles where $\profile = \langle \strategy_1, \ldots, \strategy_\totalParties \rangle$ and $\profile'= \langle \strategy'_1, \ldots, \strategy'_\totalParties \rangle$. We say that $\profile'$ is \emph{directly $\epsilon$-reachable from $\profile$ \wrt $\bar{\utility}$}, if there exists $i \in [\totalParties]$ \st (i) $\forall j \in [\totalParties] \backslash \{i\}: \strategy_j = \strategy'_j$ and (ii) $\utility_i(\profile') > \utility_i(\profile) + \epsilon$.
+        \item Let $\profile, \profile' \in \strategySet^\totalParties$ be two distinct profiles. We say that $\profile'$ is \emph{$\epsilon$-reachable from $\profile$ \wrt $\bar{\utility}$}, if there exist profiles $\profile_1, \ldots, \profile_k$ such that (i) $\profile_1 = \profile$, (ii) $\profile_k = \profile'$, and (iii) $\forall j \in [2, k]$ it holds that $\profile_j$ is directly $\epsilon$-reachable from $\profile_{j-1}$ \wrt $\bar{\utility}$.
+        \item For every strategy profile $\profile \in \strategySet^\totalParties$ we define the \emph{$(\epsilon, \bar{\utility})$-cone of $\profile$} as the set:
+        \[\mathsf{Cone}_{\epsilon, \bar{\utility}}(\profile) := \{\profile' \in \strategySet^\totalParties\;|\;(\profile' = \profile) \lor (\profile'\mbox{ is $\epsilon$-reachable from }\profile\mbox{ \wrt }\bar{\utility})\}\;.\]
+    \end{enumerate}
+\end{definition}
+
+\begin{definition}\label{def:compliant}
+    Let:
+    \begin{inparaenum}[i)]
+        \item $\epsilon$ be a non-negative real number;
+        \item $\proto$ be a protocol run by the parties $\party_1, \ldots, \party_\totalParties$;
+        \item $\infractionPredicate$ be an infraction predicate;
+        \item $\bar{\utility}=\langle \utility_1, \ldots, \utility_\totalParties \rangle$ be a utility vector, where $\utility_i$ is the utility of party $\party_i$;
+        \item $\strategySet$ be the set of all strategies a party may employ;
+        \item $\strategySet_{\infractionPredicate}$ be the set of $\compliant$ strategies.
+    \end{inparaenum}
+
+    A strategy profile $\profile \in \strategySet^n$ is $\compliant$ if $\profile \in (\strategySet_{\infractionPredicate})^\totalParties$.
+
+    The \emph{$(\epsilon,\bar{U})$-cone of $\proto$}, denoted by $\mathsf{Cone}_{\epsilon,\bar{U}}(\proto)$, is the set $\mathsf{Cone}_{\epsilon, \bar{\utility}}(\profile_\proto)$, \ie the set of all strategies that are $\epsilon$-reachable from the ``all honest'' strategy profile $\profile_\proto = \langle \proto, \ldots, \proto \rangle$ \wrt $\bar{\utility}$, also including $\profile_\proto$.
+
+    $\proto$ is \emph{$(\epsilon,\mathcal{X})$-compliant \wrt $\bar{\utility}$} if $\mathsf{Cone}_{\epsilon,\bar{U}}(\proto) \subseteq (\strategySet_{\infractionPredicate})^\totalParties$, \ie all strategy profiles in the $(\epsilon,\bar{\utility})$-cone of $\proto$ are $\compliant$.
+\end{definition}
+
+Proposition~\ref{prop:eq_comp} shows that Definition~\ref{def:compliant} expresses a relaxation of the standard approximation Nash equilibrium (Definition~\ref{def:equilibrium}).
+
+\begin{proposition}\label{prop:eq_comp}
+    Let:
+    \begin{inparaenum}[i)]
+        \item $\epsilon$ be a non-negative real number;
+        \item $\proto$ be a protocol run by the parties $\party_1, \ldots, \party_\totalParties$;
+        \item $\infractionPredicate$ be an infraction predicate;
+        \item $\bar{\utility}=\langle \utility_1, \ldots, \utility_\totalParties \rangle$ be a utility vector, with $\utility_i$ the utility of $\party_i$.
+    \end{inparaenum}
+    If $\proto$ is an $\epsilon$-Nash equilibrium \wrt $\bar{\utility}$ (\ie $\profile_\proto=\langle \proto, \ldots, \proto \rangle$ is an $\epsilon$-Nash equilibrium \wrt $\bar{\utility}$), then $\proto$ is $(\epsilon, \infractionPredicate)$-compliant \wrt $\bar{\utility}$.
+\end{proposition}
+\begin{proof}
+Assume that $\profile_\proto$ is an $\epsilon$-Nash equilibrium \wrt $\bar{\utility}$ and let $\profile'=(\strategy'_1, \ldots, \strategy'_\totalParties)$ be a strategy profile. We will show that $\profile'$ is not directly $\epsilon$-reachable from $\profile_\proto$ \wrt $\bar{\utility}$.
+
+Assume that there exists $i \in [\totalParties]$ s.t. $\forall j \in [\totalParties] \backslash\{i\}: \strategy'_j = \proto$. Since $\profile_\proto$ is an $\epsilon$-Nash equilibrium \wrt $\bar{\utility}$, it holds that $\utility_i(\profile') \leq \utility_i(\profile_\proto) + \epsilon$. Therefore, Definition~\ref{def:reach} is not satisfied and $\profile'$ is not directly $\epsilon$-reachable from $\profile_\proto$ \wrt $\bar{\utility}$.
+
+Since no profiles are directly $\epsilon$-reachable from $\profile_\proto$ \wrt $\bar{\utility}$, it is straightforward that there are no $\epsilon$-reachable strategy profiles from $\profile_\proto$ \wrt $\bar{\utility}$. The latter implies that the $(\epsilon, \bar{\utility})$-cone of $\proto$ contains only $\profile_\proto$, \ie $\mathsf{Cone}_{\epsilon,\bar{\utility}}(\proto) = \{ \profile_\proto\}$. By Definitions~\ref{def:infraction-predicate} and~\ref{def:compliant-strategy}, $\profile_\proto$ is $\compliant$, so we deduce that $\proto$ is $(\epsilon,\infractionPredicate)$-compliant \wrt $\bar{\utility}$.
+\end{proof}

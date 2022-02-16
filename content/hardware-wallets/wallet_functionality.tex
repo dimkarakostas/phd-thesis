@@ -1,0 +1,127 @@
+\section{The Ideal Functionality}\label{sec:fwallet}
+
+$\Fw$ (Figures~\ref{fig:FWallet-1} and~\ref{fig:FWallet-2}) incorporates
+$\Fsig$ and runs in the $\Gledg$-setting, interacting with the adversary
+$\adversary$, a set of parties $\partyset$, and the environment $\env$. It
+keeps the following, initially empty, items:
+\begin{inparaenum}[i)]
+    \item $A_{[]}$: a list of lists, each containing addresses and their corresponding public keys, $(\addr, \pubkey)$;
+    \item $B_{[]}$: a list of lists, each containing addresses and their corresponding balance, $(\addr, \asset)$;
+    \item $K_{[]}$: a list of master keys $\masterkeypair$.
+\end{inparaenum}
+$\Fw$ realizes the following operations, with all messages containing a session
+id of the form $\sid = (\partyset, \sid')$:
+\begin{itemize}
+    \item \emph{Wallet setup}: Upon a setup request, it initializes the list
+        of addresses, generates the account's master key, registers to
+        $\Gledg$, and returns the master private key to the user.
+    \item \emph{Client Corruption}: When $\adversary$ corrupts a client
+        $\client$, $\Fw$ leaks the public keys and addresses to which $\client$
+        has access.
+    \item \emph{Client session initialization}: To start a new session, $\Fw$
+        computes and sends to $\client$, defined in $\sid'$, an assigned pass
+        phrase; in the real world, the pass phrase acts as the authentication
+        mechanism between the parties.
+     \item \emph{Address generation}: $\Fw$ requests a new public key from
+         $\Fsig$ and picks at random an address, with which to associate the
+         key; it then stores the new address in the corresponding list and
+         returns it to $\env$. If the client is corrupted, the functionality
+         leaks the address and public key to $\adversary$.
+    \item \emph{Balance calculation}: If $\client$ is honest, it queries the
+        ledger to retrieve the blockchain; if the connected client is
+        corrupted, it requests a chain from $\adversary$. Then, it calculates
+        the wallet's available assets, based on the provided chain, and returns
+        it to $\env$.
+    \item \emph{Transaction issuing}: Upon receiving a transaction request, if
+        $\client$ is corrupted, $\Fw$ leaks the transaction information to the
+        adversary, which responds with a new transaction object. If $\user$ is
+        also corrupted, $\Fw$ discards the original request and keeps the
+        adversarial transaction, otherwise it ignores the adversary's response.
+        Finally, $\Fw$ requests a signature from $\Fsig$ for the accepted
+        transaction, which it then sends to $\Gledg$.
+\end{itemize}
+
+\myhalfbox{Functionality $\Fw$}{white!40}{white!10}{
+    \noindent\emph{Setup:}
+        Upon receiving $\msg{Setup}{}$ from some party $\user \in \partyset$,
+        forward it to $\adversary$. Then add the empty list $A_{\user}$ to
+        $A_{[]}$, register with $\Gledg$, pick the master key pair
+        $(\masterprivkey_{\user}, \masterpubkey_{\user}) \xleftarrow{\$}
+        \keyset$ and add it to $K_{[]}$ and return $\msg{SetupOK}{}$ to
+        $\user$.
+
+    \noindent\emph{Client Corruption:}
+        When $\adversary$ corrupts $\client$, send to $\adversary$
+        $\msg{AddressList}{A_{\user}}$ and
+        $\msg{MasterPubKey}{\masterpubkey_{\user}}$, for every $\user$ such
+        that a \emph{Setup} session with $\client$ has been completed.
+
+    \noindent\emph{Initialize Client Session:}
+        Upon receiving $\msg{InitSession}{}$ from $\user$, pick $\clId
+        \xleftarrow{\$} \{0, 1\}^\secparam$ and send $\msg{InitSession}{\clId}$
+        to $\client$. If $\client$ is corrupted, send
+        $\msg{InitSession}{\clId}$ to $\adversary$ and wait for a response
+        $\msg{InitSessionOK}{\clId}$. Finally, send $\msg{Session}{\clId}$ to
+        $\user$.
+
+    \noindent\emph{Generate Address:}
+        Upon receiving $\msg{GenAddr}{}$ from $\user$, send $\msg{KeyGen}{}$ to
+        $\Fsig$ and wait for a response $\msg{Verification Key}{\pubkey}$.
+        Then pick $\addr \xleftarrow{\$} \{0, 1\}^\addrlen$ and add $(\addr,
+        \pubkey)$ to $A_{\user}$. If $\client$ is corrupted, send
+        $\msg{Address}{(\addr, \pubkey)}$ to $\adversary$ and wait for a
+        response $\msg{AddressOK}{\addr'}$. If $\user$ is corrupted, set $a =
+        \addr'$, else set $a = \addr$; finally, return $\msg{Address}{a}$ to
+        $\user$.
+
+    \noindent\emph{Calculate Balance:}
+        Upon receiving $\msg{GetBalance}{}$ from $\user$, send $\msg{Read}{}$
+        to $\Gledg$ and wait for a response $\msg{Read}{\chain}$. If
+        $\client$ is corrupted, send $\msg{Read}{}$ to $\adversary$ and, upon
+        receiving the response $\msg{Read}{\chain'}$, set $\chain = \chain'$.
+        Then initialize the list $B_{\user} \in B_{[]}$ with $(a, 0)$ for every
+        address $(a, \cdot)$ in $A_{\user}$, and $\forall \tx \in \chain$, \ie
+        the ordered transactions in the ledger \st $\tx = (\addr_s, \addr_r,
+        \asset_\msf{pay}, \addr_c, \asset_\msf{change})$, do:
+        \begin{itemize}
+            \item If $\exists (\addr_s, \cdot) \in A_{\user}$, update the entry
+                $(\addr_s, \asset_\msf{past})$ $\in$ $B_{\user}$ to $(\addr_s,
+                0)$;
+            \item If $\exists (\addr_r, \cdot) \in A_{\user}$, update the entry
+                $(\addr_r, \asset_\msf{past})$ $\in$ $B_{\user}$ to $(\addr_r,
+                \asset_\msf{past} + \asset_\msf{pay})$;
+            \item If $\exists (\addr_c, \cdot) \in A_{\user}$, update the entry
+                $(\addr_c, \asset_\msf{past})$ $\in$ $B_{\user}$ to $(\addr_c,
+                \asset_\msf{past} + \asset_\msf{change})$;
+        \end{itemize}
+        Finally, compute $b = \sum_{(\cdot, \asset) \in B_{\user}} \asset$ and
+        send $\msg{Balance}{b}$ to $\user$.
+}{\label{fig:FWallet-1} The ideal hardware wallet functionality. (Part 1)}
+
+\myhalfbox{Functionality $\Fw$}{white!40}{white!10}{
+    \noindent\emph{Issue Transaction:}
+        Upon receiving $\msg{IssueTX}{(\addr_r, \asset_\msf{pay},
+        \asset_\msf{fee})}$ from $\user$, if $\client$ is corrupted,
+        forward the message to $\adversary$ and wait for a response
+        $\msg{IssueTx}{\clId, (\addr_r', \asset_\msf{pay}',
+        \asset_\msf{fee}')}$. If $\user$ is corrupted, set
+        $(\addr_r, \asset_\msf{pay}, \asset_\msf{fee}) =
+        (\addr_r', \asset_\msf{pay}', \asset_\msf{fee}')$. Then,
+        find $(\addr_{in}, \asset_{in}) \in B_{\user}: \asset_{in} \geq
+        \asset_\msf{pay} + \asset_\msf{fee}$. If such entry exists,
+        do the following:
+        \begin{inparaenum}[i)]
+            \item compute an address $\addr_c$ and its public key $\pubkey_c$,
+                as per the \emph{Generate Address} interface;
+            \item set $\asset_\msf{change} = \asset_{in} - \asset_\msf{pay} - \asset_\msf{fee}$
+                and $\tx = (\addr_{in}, \addr_{out}, \asset_\msf{pay}, \addr_c, \asset_\msf{change})$;
+            \item send $\msg{Sign}{\tx}$ to $\Fsig$ and wait for
+                $\msg{Signature}{\tx, \sig}$;
+            \item find $(\addr_{in}, \pubkey) \in A_{\user}$ and set
+                $\tx_{\sig} = (\tx, \pubkey, \sig)$.
+        \end{inparaenum}
+        Then, if $\client$ is corrupted, send $\msg{Address}{\addr_c,
+        \pubkey_c}$ and $\msg{Submit}{\tx_{\sig}}$ to $\adversary$ and wait for
+        the response $\msg{SubmitOK}{}$. Finally, send
+        $\msg{Submit}{\tx_{\sig}}$ to $\Gledg$.
+}{\label{fig:FWallet-2} The ideal hardware wallet functionality. (Part 2)}

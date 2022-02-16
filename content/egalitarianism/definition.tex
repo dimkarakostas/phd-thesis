@@ -1,0 +1,145 @@
+\subsection{A Formal Model of Crypto-Egalitarianism}\label{sec:definition}
+
+The core contribution of this chapter is a formal definition of an economic
+measure of \emph{egalitarianism} in cryptocurrencies.
+
+Before we present our definition, let us first state the \emph{desiderata} of
+such a definition. First, we want to enable concrete measurements on
+cryptocurrencies, in a manner that is quantitative and not vague. Thus far,
+egalitarianism claims have been rather informal, failing to include exact
+data~\cite{van2013cryptonote,mcmillan2013}. As such, different cryptocurrencies
+claim egalitarianism over the others, without demonstrating the claims or
+provide conclusive arguments. Second, an egalitarianism definition must measure
+the protocol maintenance returns of smaller vs. larger investors.  We thus
+desire a metric which extracts a smaller value to indicate a \emph{lack of
+egalitarianism} (\eg when large wealth generates blocks disproportionately
+faster than small wealth), or a larger value to indicate \emph{perfect
+egalitarianism} (\ie when every invested dollar has exactly equal power in
+terms of cryptocurrency generation).
+
+The first step in establishing our crypto-egalitarianism definition is to
+define the \emph{egalitarian curve} $f$. The horizontal axis of this curve
+plots the financial capital, which is available for investment, denominated in
+a fiat currency (USD).\footnote{Given that we explore a small investment
+duration, it makes little difference whether these are nominal USD or real USD,
+as long as they are the same when applying comparisons.} The vertical axis
+plots the Return On Investment (ROI), which measures the amount of
+cryptocurrency that is created during the investment period and remains unspent
+at the end of it, given an optimal allocation of the initial capital. We
+require that ROI is computed over \emph{freshly generated} cryptocurrency;
+thus, it must be newly-mined or minted, and not purchased from existing
+investors. Finally, the curve is plotted with a fixed investment duration in
+mind; naturally, curves of different cryptocurrencies can be compared only if
+they use the same duration.
+
+\begin{definition}[Egalitarian curve]
+    Given a cryptocurrency $c$ and the set of all possible investment
+    strategies $\mbb{B}$, we define the \emph{egalitarian curve} $f_{c,d}:
+    \mbb{R}^+ \longrightarrow \mbb{R}^+$ of $c$ for an investment period $d$
+    as:
+    \begin{align}
+        f_{c, d}(v) = \frac{\underset{B \in \mbb{B}}{\max}{E[B(v)]} - v}{v}
+    \end{align}
+\end{definition}
+
+The value $\underset{B \in \mbb{B}}{\max}{E[B(v)]}$ identifies the maximum
+expectation of returns across all investment strategies $\mbb{B}$, \ie the
+amount of returns which the \emph{optimal} strategy ensures for a given initial
+capital $v$. The blockchain execution is modeled as a random variable, since
+returns vary by execution; specifically, the randomness of the execution can
+affect returns, as a participant may be ``lucky'', \ie produce more blocks than
+expected~\cite{FC:FKORVW19}.
+
+We remark that we \emph{do} allow strategies to reinvest capital. For instance,
+returns earned from mining rewards can be reinvested in electricity costs for
+future mining. Furthermore, for unit consistency, we assume the strategy $B(v)$
+returns the freshly generated coins denominated in the same units as the
+capital $v$. Second, we assume participants act independently and follow the
+protocol according to its specifications.
+
+Using our definition of the egalitarian curve, we now define
+(Definition~\ref{def:egalitarianism}) egalitarianism as a concrete number.
+Considering the initial capital $v$ as a random variable, which follows a
+certain distribution $\mc{D}$, egalitarianism is the variance of the expected
+ROI, when the capital is chosen from the given distribution.
+
+\begin{definition}[Egalitarianism]\label{def:egalitarianism}
+    Given a cryptocurrency $c$ and its egalitarian curve $f$, we define the
+    \emph{egalitarianism} $e$ of $c$, for investment duration $d$ under initial
+    capital distribution $\mc{D}$, as follows:
+    \begin{align}
+      e_{c, d, \mc{D}} = -\msf{Var}_{v \gets \mc{D}}[f_{c, d}(v)]
+    \end{align}
+\end{definition}
+
+The intuition behind this definition is that, to have egalitarianism, the ROI
+must remain the same across different capital investments. As such, any
+deviation from the mean is non-egalitarian. Naturally, if a system's
+egalitarianism is \emph{higher} than another, we say that the former is
+\emph{more egalitarian} than the latter. Of course, to be accurate, such
+comparisons must be made after fixing the parameters $c$ and $d$, as well as
+the initial capital distribution $\mc{D}$. Fixing $\mathcal{D}$ to be the
+uniform distribution between a minimum and a maximum capital, the returns are
+the same for all initial capitals alike.
+
+Based on the above, we can define the \emph{ideal egalitarian curve}. First,
+as an interesting thought experiment, we consider the egalitarian curve which
+is decreasing (and is, arguably, \emph{the} ideal curve). In this case, small
+investors would receive proportionally more newly created cryptocurrencies for
+every dollar they invest, \ie the system would redistribute wealth from the
+rich to the poor. However, one can quickly see that, in decentralized
+cryptocurrencies where the identities of the participants are unknown, this is
+impossible. Indeed, the fact that decentralized cryptocurrencies allow
+anonymous generation of new identities~\cite{douceur2002sybil} allows a wealthy
+investor to split their capital into smaller ones. Thus, if the curve were ever
+to have a negative slope, the sum of the smaller splits of the rich investment
+would achieve a higher gain. By the definition of the curve, which mandates
+that it depicts the ROI of an \emph{optimal} investment, this would be a
+contradiction. Corollary~\ref{cor:sybil} makes this intuition more precise.
+
+\begin{corollary}[Sybil strategies]\label{cor:sybil}
+    Fix a cryptocurrency $c$ and an investment period interval $d$. Given
+    capital $v$, for every natural number $i \in \mathbb{N}^\star$, it holds
+    that $f_{c,d}(v) \leq f_{c, d}(i \cdot v)$.
+\end{corollary}
+\begin{proof}
+    We prove the statement by contradiction. Assume that, for some capital $v$,
+    there exists a natural number $i \in \mathbb{N}^\star$ such that
+    $f_{c,d}(v) > f_{c,d}(i \cdot v)$. Also assume that, for capital $v$, the
+    optimal strategy is $B'$, so $\underset{B \in
+    \mathbb{B}}{\max}{\mathbb{E}[B(v)]} = \mathbb{E}[B'(v)]$. For capital $i
+    \cdot v$, there exists a strategy $B''$, such that the capital is split
+    into $i$ equally-sized parts, with the strategy $B'$ applied on each part.
+    Given that the execution of each such sub-strategy is independent, the
+    expected returns for $B''$ are:
+    \begin{align}\label{eq:break-strategy}
+        \mathbb{E}[B''(i \cdot v)] = i \cdot \mathbb{E}[B'(v)]  = i \cdot \underset{B \in \mathbb{B}}{\max}{\mathbb{E}[B(v)]}
+    \end{align}
+    Additionally, $B''$ is at best the optimal strategy, so:
+    \begin{align}\label{eq:multi-strategy}
+        \underset{B \in \mathbb{B}}{\max}{\mathbb{E}[B(i \cdot v)]} \geq \mathbb{E}[B''(i \cdot v)] \xRightarrow{\text{(\ref{eq:break-strategy})}}
+        \underset{B \in \mathbb{B}}{\max}{\mathbb{E}[B(i \cdot v)]} \geq i \cdot \underset{B \in \mathbb{B}}{\max}{\mathbb{E}[B(v)]}
+    \end{align}
+    However, it should also hold that:
+    \begin{alignat}{2}
+        f_{c,d}(v) &> f_{c,d}(i \cdot v) \Rightarrow \notag\\
+        \frac{\underset{B \in \mathbb{B}}{\max}{\mathbb{E}[B(v)]} - v}{v} &> \frac{\underset{B \in \mathbb{B}}{\max}{\mathbb{E}[B(i \cdot v)]} - i \cdot v}{i \cdot v} \xRightarrow{\text{(\ref{eq:multi-strategy})}} \notag\\
+        \frac{\underset{B \in \mathbb{B}}{\max}{\mathbb{E}[B(v)]} - v}{v} &> \frac{i \cdot \underset{B \in \mathbb{B}}{\max}{\mathbb{E}[B(v)]} - i \cdot v}{i \cdot v} \Rightarrow \notag\\
+        \frac{\underset{B \in \mathbb{B}}{\max}{\mathbb{E}[B(v)]} - v}{v} &> \frac{\underset{B \in \mathbb{B}}{\max}{\mathbb{E}[B(v)]} - v}{v} \notag
+    \end{alignat}
+    which is impossible.
+\end{proof}
+
+Corollary~\ref{cor:sybil} shows that, in purely decentralized systems, a
+decreasing egalitarian curve is impossible. Therefore, the next-best ideal
+curve is a constant one, where the ROI is stable regardless of capital
+invested. Under this condition, the amount of freshly generated cryptocurrency
+is exactly proportional to the money invested. Consequently, a cryptocurrency
+with an ideal egalitarian curve is perfectly egalitarian
+(Definition~\ref{def:perfect-egalitarianism}).
+
+\begin{definition}[Perfect egalitarianism]\label{def:perfect-egalitarianism}
+    A cryptocurrency $c$ is \emph{perfectly egalitarian}, for investment
+    duration $d$ and initial capital distribution $\mc{D}$, if $e_{c, d, \mc{D}}
+    = 0$.
+\end{definition}

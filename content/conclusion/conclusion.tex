@@ -1,0 +1,62 @@
+The goal of this thesis was to expand the horizon of how to build secure and
+efficient applications on top of distributed ledgers. This goal was approached
+via a series of research works, each building on and expanding the existing
+literature, from and towards multiple directions. Our research evolved
+around three axes:
+\begin{inparaenum}[i)]
+    \item cryptography;
+    \item distributed systems;
+    \item game theory and economics.
+\end{inparaenum}
+
+On the cryptographic side, we both analyzed pre-existing protocols and proposed
+constructions of our own. Specifically, in focusing on the security and safety
+of distributed ledger-based systems, we analyzed hardware wallets
+(Chapter~\ref{chap:hardware-wallets}), describing a formal model to capture
+their necessary properties and evaluate real-world implementations. Following
+this, we proposed a holistic model of wallets for Proof-of-Stake-based systems
+(Chapter~\ref{chap:delegation}). This line of work brought about a formal
+definition of a PoS wallet's core, a novel security notion (address
+malleability), and a rigorous description of incorporating the wallet's core in
+a PoS distributed ledger system. Notably, our model highlighted a number
+of disadvantages, perhaps most intesting of which is the tendency for
+centralization around a few participants. After identifying this drawback, we
+devised a collective stake pool protocol (Chapter~\ref{chap:collective-pools}),
+which enables a group of people to form a coalition in a trustless manner
+and be as competitive as centrally-controlled participating entities.
+Crucially, across the thesis, our security analyses employed simulation-based
+proofs of security, striving to offer the highest level of guarantees possible.
+
+On the systems' side, we focused on improving the efficiency and scalability of
+distributed ledger-based systems. Motivated by the ever-growing (and eventually
+unsustainable) amount of data published in existing distributed ledgers, we
+devised a framework for improving transaction state efficiency
+(Chapter~\ref{chap:utxo-growth}). Our framework is inspired by similar
+techniques in traditional database systems and consists of multiple layers,
+each enabling incremental improvements towards minimizing a ledger's state.
+
+On the economics' side, we analyzed distributed ledger systems first from a
+micro-economic perspective. Chapters~\ref{chap:collective-pools}
+and~\ref{chap:utxo-growth} offer high-level descriptions of incentivizing users
+to behave honestly, when participating in collective stake pools and creating
+efficient transactions respectively. More importantly,
+Chapter~\ref{chap:compliance} engages in a thorough analysis of the Nash dynamics of
+blockchain-based financial systems and introduces the notion of compliance. The results
+of our analysis highlight core differences between PoW and PoS-based
+systems, formalized the necessity of penalizing misbehaving parties in the
+latter, and showcased that the market does not often respond rationally, thus
+cannot (on its own) offer protection against economic attacks.
+
+Finally, Chapter~\ref{chap:macroeconomics} explored macroeconomic properties of distributed ledgers.
+Section~\ref{sec:egalitarianism} introduced crypto-egalitarianism, a property that
+expresses the reward rate of participants, with respect to their
+capital investment in the system. We offered a formal definition of
+crypto-egalitarianism, which boils it down to a single number,
+enabling a precise comparison, in contrast to existing ad
+hoc arguments. Crucially, our research proved that wealth redistribution in
+favor of the poor is impossible in completely decentralized systems;
+consequently, some level of central control is needed to enforce any such
+policy in a democratically-mandated manner. Building on this necessity,
+Section~\ref{sec:taxation} explored how to reduce tax gaps, thus helping a
+government to efficiently enforce its intended tax policies via a distributed
+ledger-based monetary and payment system.

@@ -1,0 +1,82 @@
+\subsection{PoW vs. PoS}
+
+Before studying the egalitarianism of different cryptocurrency consensus
+mechanisms, we consider the leader election process, to establish an
+understanding of the differences in egalitarianism between the two models of
+PoW and PoS.
+
+\paragraph{Proof-of-Work}
+The number of hash evaluations is one of the several critical parameters to
+consider when purchasing mining hardware. Other important parameters include
+the price of a mining unit, as well as its electricity consumption. Mining
+hardware is divided in various tiers based on performance, namely CPU miners,
+GPU miners, FPGA miners, and specialized ASIC miners~\cite{taylor2013bitcoin}.
+Although the pricing of such devices may be similar, the hashing rate and, in
+turn, the Return on Investment, is highly dependent on the hardware's tier.
+For example, as of December 2018, the mining hardware ``Whatsminer M10''
+produced by the company ``MicroBT'' cost $\$1{,}022.00$ per unit and produces
+$\$0.104266$ per hour of operation in net gains, \ie average mined Bitcoins per
+hour denominated in US dollars minus the electricity costs. On the other hand,
+the mining hardware ``8 Nano Pro'', produced by the company ``ASICMiner'', cost
+$\$6{,}000.00$ per unit, but produces $\$0.315327$ per hour of operation in net
+gains, \ie almost three times the hourly net gains of its cheaper competitor.
+Thus, if one can afford to purchase the more expensive hardware, each of their
+subsequent dollar invested in electricity returns more mined coins.
+
+It has long been folklore knowledge in the blockchain community that mining
+becomes more egalitarian by using a memory-hard PoW function. This intuition is
+correct, the core reason being the difficulty to construct specialized hardware
+for memory-hard functions. For example, no ASICs currently exist for Monero
+mining. Therefore, the only way to scale mining operations is by purchasing
+more general purpose hardware. However, since the mining hardware in this case
+varies little, both in terms of cost and performance, scaling returns become
+proportional to investments.
+
+In this chapter, we only analyze the scaling of the economics of mining with
+respect to hardware. We also do not take into account basic costs such as
+shipping and the availability of a basic machine to co-ordinate mining (such as
+a personal computer not performing mining itself). A multitude of additional
+factors play important roles for mining operations, such as space rental costs,
+machine cooling and maintenance costs, or bulk electricity purchase. As is
+common in economies of scale, these relative costs are reduced for large-scale
+operations, although they are similar for all PoW cryptocurrencies and thus do
+not affect relative comparisons between them. We also remark that we analyze
+mining costs for small capital investments. If larger capital, \eg above a few
+million US dollars, is available, corporations can develop their own
+specialized hardware and gain a competitive advantage by treating it as a trade
+secret~\cite{taylor2013bitcoin}. These details make the comparison in favour of
+PoS \emph{more pronounced}, as PoS operations do not incur such types of costs
+and do not lend themselves to specialized mining hardware research.
+
+\paragraph{Proof-of-Stake}
+PoS is often criticized for its lack of egalitarianism. The rationale is that,
+in PoS, the more money one stakes, the more money one generates. Thus, ``the
+rich get richer'', which is precisely the opposite of egalitarianism.
+Additionally, in PoS systems, the money owners could constitute a \emph{closed,
+rich club}, refusing to share the assets with any outsiders. In contrast, this
+argument claims, PoW is naturally egalitarian; everyone is paid based not on
+the money they own, but on the computational power they put to work. In this
+case, since computational power is a \emph{natural} resource and cannot be
+exclusively owned, a closed rich club cannot be formed. Although this argument
+seems agreeable at first, the results of this chapter contradict it. In fact,
+correctly parameterized stake-based systems are much more egalitarian than
+work-based ones.\footnote{Variations of PoS, such as
+delegated PoS, may not be perfectly egalitarian, since the delegates, \ie the
+leaders of the stake pools, typically earn extra profits for managing the stake
+pools~\cite{DBLP:conf/eurosp/BrunjesKKS20}.}
+
+It is instructive to dispel the above argument intuitively, before we support
+our position with data. First, the argument that money can be exclusively
+owned, but computational power cannot, is rather misguided. Indeed, this may be
+true in the case of a peculiar oligopoly, where a small faction of parties
+mutually agrees to never sell to outsiders, despite external demand. However,
+in an open market, both money and computational power can be freely purchased
+and, in fact, any non-negligible amount of computational power must be
+necessarily purchased that way.  In this work, we assume an open market for
+both mining hardware and financial capital, which allows open participation.
+Therefore, given that both money and computational power are purchasable, we
+consider the funds one invests, either in technology or in financial capital,
+in order to maximize the returns from a cryptocurrency's block generation
+mechanisms. The amount of cryptocurrency generated by a given investment can be
+concretely measured and compared, thus the question can now be analyzed
+quantitatively and answered concretely.

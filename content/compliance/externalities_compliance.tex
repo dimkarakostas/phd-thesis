@@ -1,0 +1,123 @@
+\subsection{Compliance under Externalities}
+
+We now revisit our results, taking externalities into account. The core idea is
+to find the relation between the assets' price and external, infraction-based
+rewards, such that the former counters the latter, hence parties are
+incentivized to remain compliant.
+
+In systems that are compliant in the standalone setting, \ie without
+considering externalities, it suffices to show that the exchange rate is
+reduced to an extent which counterbalances the external rewards. We consider
+two strategy profiles:
+\begin{inparaenum}[i)]
+    \item $\profile_\proto$ is the profile under which all parties follow the
+        protocol $\proto$;
+    \item $\profile_{\strategy_{\party}}$ is the profile under which all parties except
+        $\party$ follow $\proto$, whereas $\party$ deviates by following a non-compliant strategy $\strategy_{\party}$; for this
+        deviation, $\party$ receives external rewards
+        $\utilityBoostVal_{\party, \profile_{\strategy_{\party}}}$.
+\end{inparaenum}
+Assume a system that is $(\epsilon, \infractionPredicate)$-compliant; under
+externalities, the system remains compliant, for the same $\epsilon$, as long
+as it holds:
+$\forall \party \; \forall \strategy_{\party}: (\rewardVal_{\party, \profile_{\strategy_{\party}}} \cdot \exchangeRateVal_{\profile_{\strategy_{\party}}} + \utilityBoostVal_{\party, \profile_{\strategy_{\party}}}) - (\rewardVal_{\party, \profile_\proto} \cdot \exchangeRateVal_{\profile_\proto}) < \epsilon$.
+In some cases, \eg under fair rewards or in the synchronous setting of
+single-leader PoS (cf. Subsection~\ref{subsec:single-leader-pos}), the expected
+rewards are equal under both profiles. In those cases, it holds:
+$\utilityBoostVal_{\party, \profile_{\strategy_{\party}}} \leq \rewardVal_{\party, \profile_\proto} \cdot (\exchangeRateVal_{\profile_\proto} - \exchangeRateVal_{\profile_{\strategy_{\party}}}) + \epsilon$.
+Therefore, if the exchange rate is sufficiently reduced, when $\party$ performs
+an infraction, $\party$ is incentivized to remain compliant. More formally,
+Theorem~\ref{thm:external-ouroboros} analyzes Ouroboros under a synchronous
+network and externalities; similar statements can be made for the positive
+results of Sections~\ref{sec:universal} and~\ref{subsec:bitcoin}.
+
+\begin{theorem}\label{thm:external-ouroboros}
+    Assume
+    \begin{inparaenum}[i)]
+        \item a synchronous network (cf. Section~\ref{sec:network-model}),
+        \item the conflicting predicate $\infractionPredicate_{conf}$, and
+        \item that $\forall \party \in \partySet: \miningpower_{\party} <$~$\frac{1}{2}$.
+    \end{inparaenum}
+    Also let:
+    \begin{inparaenum}[i)]
+        \item $\strategySet_{-\infractionPredicate_{conf}}$: the set of all non $\infractionPredicate_{conf}$-compliant strategies;
+        \item $\exchangeRateVal_{\profile_\proto}$: the (expected) exchange rate under $\execution_{\profile_\proto}$;
+        \item $\exchangeRateVal_{\profile_{\strategy_{\party}}}$: the (expected) exchange rate when only $\party$ employs some non $\infractionPredicate_{conf}$-compliant strategy $\strategy_{\party}$;
+        \item $\utilityBoostVal_{\party, \profile_{\strategy_{\party}}}$: the external utility that $\strategy_{\party}$ yields for $\party$.
+    \end{inparaenum}
+    Ouroboros with block-proportional rewards (cf.
+    Definition~\ref{def:proportional-rewards}, for fixed block reward $\reward$) under the aforementioned externalities is not $(\epsilon,
+    \infractionPredicate_{conf})$-compliant (cf. Definition~\ref{def:compliant}) \wrt
+    utility \emph{Reward} (cf. Definition~\ref{def:utility})
+    and, if $\reward >
+    \cost$, it is also not $(\epsilon, \infractionPredicate_{conf})$-compliant \wrt
+    utility \emph{Profit}, in both cases
+    for some
+    $\epsilon < \mathsf{max}\{  \underset{\party \in \partySet}{\mathsf{max}}\{ \underset{\strategy_{\party} \in \strategySet_{-\infractionPredicate_{conf}}}{\mathsf{max}}\{ \rewardVal_{\party, \profile_{\proto}} \cdot (\exchangeRateVal_{\profile_{\strategy_{\party}}} - \exchangeRateVal_{\profile_\proto}) + \utilityBoostVal_{\party, \profile_{\strategy_{\party}}} \} \}, 0 \}$.
+\end{theorem}
+\begin{proof}
+    Following the same reasoning as
+    Theorem~\ref{thm:compliant-ouroboros-synchronous}, if a party $\party$
+    deviates by only producing conflicting messages, but does not abstain, its
+    expected rewards are the same as following the protocol; specifically, due
+    to network synchronicity, after every round when $\party$ is leader, every
+    other party adopts one of the blocks produced by $\party$ (although
+    possibly not everybody adopts the same block), and, since all these blocks
+    are part of the (equally-long) longest chain (at that point), eventually
+    one of these blocks will be output in the chain of the observer.
+    Consequently, it holds that $\rewardVal_{\party,
+    \profile_{\strategy_{\party}}} = \rewardVal_{\party, \profile_{\proto}}$.
+
+    Second, the maximum additional utility that a party $\party$ may receive by
+    deviating from the honest protocol via producing conflicting blocks is:
+    $\underset{\strategy_{\party} \in \strategySet_{-\infractionPredicate_{conf}}}{\mathsf{max}}\{ \rewardVal_{\party, \profile_{\proto}} \cdot (\exchangeRateVal_{\profile_{\strategy_{\party}}} - \exchangeRateVal_{\profile_\proto}) + \utilityBoostVal_{\party, \profile_{\strategy_{\party}}} \}$.
+    Therefore, if for at least one party this value is non-negligible,
+    $\epsilon$ is not small enough and so the protocol is not compliant.
+\end{proof}
+
+In the above negative results, non-compliance arises in
+\begin{inparaenum}[(a)]
+    \item systems that employ fair rewards and
+    \item PoS systems where a party is incentivized to produce multiple
+        conflicting messages, \ie under a lossy network or multiple leaders per
+        slot.
+\end{inparaenum}
+
+Regarding (a), Section~\ref{sec:universal} shows that fair rewards ensure
+compliance under utility \emph{Reward}, but non-compliance regarding profit.
+Specifically, assuming a minimal participation cost $\cost^\bot_{\party}$, we
+showed that, if $\party$ abstains, they incur zero cost without any reward
+reduction. To explore compliance of fair rewards under externalities, we
+consider two strategy profiles $\profile_\proto, \profile_{\strategy_{\party}}$,
+as before. Notably, $\strategy_{\party}$ is the abstaining strategy which, as shown in Section~\ref{sec:universal}, maximizes utility in the standalone setting.
+For the two profiles, the profit for $\party$ becomes
+$\rewardVal_{\party, \profile_\proto} \cdot \exchangeRateVal_{\profile_\proto} - \costVal_{\party, \profile_\proto}$ and
+$\rewardVal_{\party, \profile_{\strategy_{\party}}} \cdot \exchangeRateVal_{\profile_{\strategy_{\party}}} + \utilityBoostVal_{\party, \profile_{\strategy_{\party}}}$ respectively.
+Again, in both cases the party's rewards are equal.
+Therefore, since it
+holds that $\cost^\bot_{\party} \leq \costVal_{\party, \profile_\proto}$,
+$\party$ is incentivized to be $(\epsilon, \infractionPredicate_{conf})$-compliant (for some $\epsilon$) if:
+\begin{align}
+    \rewardVal_{\party, \profile_{\strategy_{\party}}} \cdot \exchangeRateVal_{\profile_{\strategy_{\party}}} + \utilityBoostVal_{\party, \profile_{\strategy_{\party}}} \leq \rewardVal_{\party, \profile} \cdot \exchangeRateVal_{\profile_\proto} - \costVal_{\party, \profile_\proto} + \epsilon \Rightarrow \nonumber \\
+    \costVal_{\party, \profile_\proto} + \utilityBoostVal_{\party, \profile_{\strategy_{\party}}} \leq \rewardVal_{\party, \profile_\proto} \cdot (\exchangeRateVal_{\profile_\proto} - \exchangeRateVal_{\profile_{\strategy_{\party}}}) + \epsilon \Rightarrow \nonumber \\
+    \cost^\bot_{\party} + \utilityBoostVal_{\party, \profile_{\strategy_{\party}}} \leq \rewardVal_{\party, \profile_\proto} \cdot (\exchangeRateVal_{\profile_\proto} - \exchangeRateVal_{\profile_{\strategy_{\party}}}) + \epsilon
+\end{align}
+If the abstaining strategy yields no external rewards, as is typically the
+case, $\utilityBoostVal_{\party, \profile_{\strategy_{\party}}} = 0$, so the
+exchange rate needs to only counterbalance the minimal participation cost.
+
+Regarding (b), we consider single-leader PoS under a lossy network, since the
+analysis is similar for multi-leader PoS. We again consider two strategy
+profiles $\profile_\proto, \profile_{\strategy_{\party}}$ as above. Now, under
+$\profile_{\strategy_{\party}}$, $\party$ produces $k$ blocks during each slot for which
+it is leader, to increase the probability that at least one of them is output
+in the observer's final chain. Also, for simplicity, we set
+$\utilityBoostVal_{\party, \profile_{\strategy_{\party}}} = 0$. These PoS
+systems become $(\epsilon', \infractionPredicate_{conf})$-compliant (for
+some $\epsilon'$) if:
+\begin{align}
+    \rewardVal_{\party, \profile_{\strategy_{\party}}} \cdot \exchangeRateVal_{\profile_{\strategy_{\party}}} &\leq \rewardVal_{\party, \profile_\proto} \cdot \exchangeRateVal_{\profile_\proto} + \epsilon \Rightarrow \nonumber \\
+    (1 - \networkLossProb^k \cdot (1 - \networkLossProb)^2) \cdot \reward_{max} \cdot \exchangeRateVal_{\profile_{\strategy_{\party}}} &\leq (1 - \networkLossProb \cdot (1 - \networkLossProb)^2) \cdot \reward_{max} \cdot \exchangeRateVal_{\profile_\proto} + \epsilon \Rightarrow \nonumber \\
+    \exchangeRateVal_{\profile_{\strategy_{\party}}} &\leq \frac{1 - \networkLossProb \cdot (1 - \networkLossProb)^2}{1 - \networkLossProb^k \cdot (1 - \networkLossProb)^2} \cdot \exchangeRateVal_{\profile_\proto} + \epsilon'
+\end{align}
+where $\reward_{max} = \reward \cdot \sum_{i \in [1, \epoch]} \epochLength \cdot \miningpower_{\party, i}$ and $\networkLossProb, \reward, \epochLength$ are as in Subsection~\ref{subsec:multi-leader-pos}.

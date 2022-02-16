@@ -1,0 +1,161 @@
+\section{Security Analysis}\label{sec:security}
+
+We now assess the security of our collective pool design. Specifically,
+Theorem~\ref{thm:collective-pool} shows that the protocol $\Ppool$ securely
+realizes the ideal functionality $\Fpool$, assuming that the employed
+cryptographic primitives are secure and that the adversarial power within the
+pool is properly bounded.
+
+\begin{theorem}\label{thm:collective-pool}
+    The protocol $\Ppool$, parameterized by a validation predicate
+    $\algovalidate$, a permutation algorithm $\permutationAlgo$, and a consensus
+    protocol $\Pconsensus$ (cf. Definition~\ref{def:consensus})
+    securely realizes $\Fpool$ with the hybrid execution $\hybpool$ in the
+    global $\Gledger$ model, and
+    $\prob^{\subselectionParam, \adversarialParties, \totalParties} = 1 - \sum_{v = \lfloor \frac{\subselectionParam + 1}{2} \rfloor}^{\min (\subselectionParam, \adversarialParties)} \frac{ {\adversarialParties \choose v} \cdot {{\totalParties - \adversarialParties} \choose {\subselectionParam - v}} }{ {\totalParties \choose \subselectionParam} }$,
+    assuming $\sum_{\party \in P_{\adversary}} \weight_{\party} < \thold$, where
+    $\subselectionParam$ is the subselection parameter for transaction
+    verification, $P_{\adversary}$ is the set of $\adversarialParties$ corrupted
+    parties out of $\totalParties$ total parties, $\wfunc$ is the weight
+    distribution of the $\totalParties$ parties, and $\thold$ is the signature
+    threshold.
+\end{theorem}
+
+\begin{proof}
+    The proof is constructed in the UC Framework, so it is simulation-based. As
+    such, we will show that the environment $\env$ cannot efficiently
+    distinguish between two executions, the ideal and the real.  The simulator
+    $\iadv$ interacts with the ideal functionality $\Fpool$ in the ideal
+    execution, whereas $\adv$ interacts with $\Ppool$ in the real execution. We
+    will show that, if $\Ppool$ does not securely realize the ideal
+    functionality $\Fpool$, when instantiated with the parameters defined in
+    the theorem, then at least one of the conditions is violated.
+
+    First, we provide the construction for the simulator. $\iadv$ runs
+    internally a copy of the adversary $\adv$. $\iadv$ forwards any inputs
+    received from the environment $\env$ to the internal copy of $\adv$, and
+    vice versa, and behaves as follows:
+    \begin{itemize}
+        \item \emph{Gathering}: Upon receiving the message $\msg{gather}{}$ for
+            all parties $\party_i, i \in [1, \totalParties]$ from $\Fpool$, send
+            $\msg{KeyGen}{}$ to $\Fweight$ with the appropriate $sid$.  Upon
+            receiving the reply $\msg{KeyGen}{\threshpubkey_{pool}}$, record
+            $\threshpubkey$, and return $\msg{gather-ok}{\threshpubkey}$ to
+            $\Fpool$.
+        \item \emph{Pool Registration}: Upon receiving the
+            $\totalParties$ messages $\msg{register}{\mathsf{members}}$ from $\Fpool$, send
+            $\msg{init}{\mathsf{members}}$ to $\rewardFunc$ and wait for
+            $\msg{init-ok}{\addr_{reward}}$.  Then send $\msg{Sign}{m}$
+            to $\Fweight$ with $m = (\mathsf{members}, \addr_{reward}$). Upon
+            receiving a reply $\msg{Sign}{m, \threshsig_{pool}}$, register $(m,
+            \threshsig_{pool})$ and return to $\Fpool$ the message
+            $\msg{register-ok}{\addr_{reward}, \threshsig_{pool}}$.
+        \item \emph{Closing}: Upon receiving $\msg{close}{x}$ from $\Fpool$, on
+            behalf of a set of parties $\partyset$, send the message
+            $\msg{Sign}{x}$ to $\Fweight$ on behalf of each party in
+            $\partyset$.  Upon receiving a reply $\msg{Sign}{x,
+            \threshsig_{pool}}$, record $\threshsig_{pool}$ and return
+            $\msg{close-ok}{\threshsig_{pool}}$ to $\Fpool$.
+        \item \emph{Transaction Verification}: Upon receiving
+            $\msg{transaction-ver}{\tx}$ from $\Fpool$, forward it to the
+            internal copy of $\adv$, wait for the output
+            $\msg{transaction-ok}{\chain, \tx, f}$ from $\adv$ and forward it
+            to $\Fpool$.
+        \item \emph{Block issuing}: Upon receiving $\msg{issue-block}{b}$ from
+            $\Fpool$, send $\msg{Sign}{b}$ to $\Fweight$. Upon receiving a
+            reply $\msg{Sign}{b, \threshsig_{pool}}$ and record $(b,
+            \threshsig_{pool})$.  Finally, return $\msg{issue-block}{b,
+            \threshsig_{pool}}$ to $\Fpool$.
+        \item \emph{Party corruption}: When the adversary $\adv$ corrupts a
+            party $\party$, $\iadv$ corrupts the same party in the ideal process
+            and hands to $\adv$ its internal state.
+        \item \emph{Global ledger update}: When $\adversary$ sends
+            $(\mathsf{ADVANCE}, \party, \Sigma)$ to the global ledger $\Gledger$,
+            $\iadv$ does so in the ideal world; similarly, when
+            $\adversary$ sends $(\mathsf{EXTEND}, b)$ to $\Gledger$, so does
+            $\iadv$.
+        \item \emph{Signature generation}: When the adversary $\adv$ requests a
+            signature on some message $m$, $\iadv$ sends $\msg{Sign}{m}$ to
+            $\Fweight$; upon receiving the reply $\msg{Sign}{m, \threshsig}$,
+            it returns $\threshsig$ to $\adv$.
+    \end{itemize}
+
+    The first observation is that $\iadv$ needs to ensure that a party $\party$ has
+    the same view of the ledger as in the real world. Therefore, it advances
+    parties only when the real world adversary $\adv$ does so.
+
+    To prove the theorem, we assume that $\Ppool$ does not realize $\Fpool$,
+    \ie there exists adversary $\adversary$ such that, for every simulator
+    $\iadv$, there exists environment $\env$ that can distinguish between the
+    ideal world (of $\Fpool$ and $\iadv$) and the real world (of $\Ppool$ and
+    $\adversary$). Following, we show that $\iadv$ violates the security of one
+    of the primitives used by $\Ppool$, \ie the consensus protocol
+    $\Pconsensus$ and the weighted threshold signature scheme
+    $\threshsigscheme$.
+
+    We build an algorithm $\distinguisher$ that breaks the security of the
+    cryptographic primitives as follows.  $\distinguisher$ runs a simulated
+    copy of $\env$ and simulates for $\env$ the ideal environment, \ie
+    $\distinguisher$ acts both as $\Fpool$ and $\iadv$ on $\env$'s messages.
+
+    Similar to $\iadv$, $\distinguisher$ runs a simulated copy of $\adv$. When
+    running \emph{Gathering} to obtain the threshold keys, instead of running
+    $\threshkeygen$, $\distinguisher$ hands $\adversary$ the public key
+    $\threshpubkey$ which is obtained as the input from $\iadv$. To obtain a
+    signature $\signature$ on a message $m$, $\distinguisher$ hands $m$ to its
+    oracle, instead of using $\threshsign$. When $\adv$ advances the state of
+    party $\party$ in the global ledger $\Gledger$, $\distinguisher$ does so as
+    well.
+
+    Regarding the consensus subprotocol $\Pconsensus$, we consider the case
+    when $\env$ activates an uncorrupted party $\party$ with input a transaction
+    $\tx$ via the interface \emph{Transaction Verification}. At that point,
+    $\distinguisher$ computes $b = \algovalidate(\chain, \tx)$, where $\chain$
+    is the state of party $\party$ in the global ledger $\Gledger$. Next,
+    $\distinguisher$ checks the output $b'$ in the real world (where
+    $\adversary$ operates). If the majority of the committee elected to
+    validate $\tx$ is honest and $b \neq b'$, then $\distinguisher$ retrieves
+    the transcript of $\Pconsensus$, run for the validation of $\tx$ by
+    $\adversary$, and outputs it (observe that this transcript is represents an
+    execution of $\Pconsensus$ where its security breaks).
+
+    To analyze the success probability of $\distinguisher$, we consider the
+    event $E$, where $b \neq b'$, as defined above. Since $\Pconsensus$ is
+    secure as long as a majority of participants is honest, the executions of
+    the real world, \ie the interaction of $\env$ with $\adversary$ and
+    $\Ppool$, and the ideal world (resp. $\iadv$ and $\Fpool$) are
+    statistically close. If we are guaranteed that $\env$ distinguishes between
+    the two executions, then $E$ occurs with non-negligible probability.
+    Finally, from the point of view of $\adversary$ and $\env$, the interaction
+    with $\distinguisher$ is the same as with an interaction with protocol
+    $\Ppool$ in the real world.
+
+    Regarding the weighted threshold signatures, we note that the functionality
+    $\Fpool$ performs the same checks regarding signature issuing as
+    $\Fweight$. In fact, only signature generation is performed by the
+    collective pool; signature verification should be employed when advancing
+    the ledger state, \ie upon adopting new blocks, or when validating a
+    certificate. Therefore, the security of $\Fweight$ ensures that $\env$
+    cannot distinguish the two executions (real vs. ideal world) \wrt the
+    weighted threshold signatures.
+
+    Regarding block issuing we consider the event $E'$, where a set of parties
+    controlling a majority of the pool's stake initiate block issuing, but no
+    signed block is output. In that case, either the signature issuing of
+    $\threshsigscheme$ fails or the parties locally produce a different block
+    $b$, \ie their mempool is not synchronized. Regarding the former, the
+    same analysis on signature issuing as above applies. Regarding the latter,
+    if two honest parties hold a different mempool at the point when
+    $\blockify$ is used, either their ledger state $\chain$ is different or
+    their mempool is different. This implies that $\Fbroad$ fails for at least
+    one transaction $\tx$, \ie an honest party inserts $\tx$ in its mempool
+    and, after $\tx$ is sent to $\Fbroad$, at least one other honest party
+    fails to also insert it to its mempool. However, this is impossible, since
+    the simulator ensures the former and $\Fbroad$ ensures the latter.
+
+    Finally, the permutation algorithm $\permutationAlgo$ is executed locally
+    by each party, therefore the adversary cannot affect its output.
+    Additionally, the probability $\prob^{\subselectionParam,
+    \adversarialParties, \totalParties}$ is computed following the analysis of
+    Section~\ref{sec:participation}.
+\end{proof}

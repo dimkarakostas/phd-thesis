@@ -1,0 +1,40 @@
+\paragraph{Related Work}
+The problem of unsustainable growth of the UTxO set has concerned developers
+for years. It has been discussed in community
+articles~\cite{bitcoin-mag-utxo,state-growth-problem},
+some~\cite{andresen-utxo} offering estimations on the level of inefficiency in
+Bitcoin. Additionally, research
+papers~\cite{EPRINT:PDNH18,EPRINT:DPNH17b,houyBitcoin,easley2019mining} have
+analyzed Bitcoin's and other cryptocurrencies' UTxO sets to gain further
+insight. Engineering efforts, \eg in Bitcoin Core's newer
+releases~\cite{maxwell-core}, have also focused on improving performance by
+reducing the UTxO memory requirements. Various solutions have been proposed to
+reduce the state of a UTxO ledger, \eg consolidation of
+outputs~\cite{bitcoin-utxo-consolidate} can help reduce the cost of spending
+multiple small outputs. Alternatively, Utreexo~\cite{EPRINT:Dryja19}, uses
+cryptographic accumulators to reduce the size of the UTxO set in memory, while
+BZIP~\cite{jiang2019bzip} explores lossless compression of the UTxO set.
+
+An important notion in this line of research is the ``stateless
+blockchain''~\cite{todd-utxo}. Such blockchain enables a node to participate in
+transaction validation without storing the entire state of the blockchain, but
+only a short commitment to it. Chepurnoy \etal~\cite{EPRINT:ChePapZha18} employ
+accumulators and vector commitments to build such blockchain. Concurrently,
+Boneh \etal~\cite{EPRINT:BonBunFis18b} introduce batching techniques for
+accumulators in order to build a stateless blockchain with a trustless setup
+which requires constant amount of storage. We consider an orthogonal problem,
+\ie constructing transactions in an incentive-compatible manner that minimizes
+the state, so these tools can act as building blocks in our proposed
+techniques.
+
+The role of fees in blockchain systems has also been a topic of interest in
+recent years. Luu \etal~\cite{CCS:LTKS15} explored incentives in Ethereum,
+focusing on incentivizing miners to correctly verify the validity of scripts
+run on this ``global consensus computer''. M{\"o}ser and
+B{\"o}hme~\cite{FCW:MosBoh15} investigate Bitcoin fees empirically and observe
+that users' behavior depends primarily on the client software, rather than a
+rational cost estimation. Finally, in an interesting work, Chepurnoy
+\etal~\cite{FCW:CheKhaMes18} propose a fee structure that considers the
+storage, computation, and network requirements; their core idea is to classify
+each transaction on one of the three resource types and set its fees
+accordingly.

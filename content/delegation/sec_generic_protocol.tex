@@ -1,0 +1,99 @@
+\section{The Generic Core-Wallet Protocol}\label{sec:protocol-wallet}
+
+In this section we describe the protocol $\ProtoW$
+(Figures~\ref{fig:protocolWalletCore-1} and~\ref{fig:protocolWalletCore-2}),
+which realizes the core-wallet ideal functionality.  The protocol interacts
+with the party $\p_{o}$, \ie the wallet's owner, and maintains the, initially
+empty, lists $PK$ of payment keys and addresses and $SK$ of staking keys.
+Additionally, it uses a number of functions for different processes.
+$\mathrm{parsePubAttrs}$ returns the list of public attributes
+$[\stakingkeyverify, \msf{wrt}, \msf{aux}]$ given an address. The $\algohierarchicalkeygen$
+and $\algorecoverytaggen$ functions take effect during address generation and
+are analyzed next in Section~\ref{subsec:addrgen_properties}. Finally, we
+assume the existence of a signature scheme $\sigscheme$.
+
+For this definition, we ease notation by dropping the generic attribute
+notation $\attribute_i$ and instead using names representative of each
+attribute. Therefore, the staking and the payment information are the staking
+key $\stakingkeypair$ and the payment key $\paymentkeypair$ respectively. The
+list of public attributes $d = [\stakingkeyverify, \msf{wrt}, \msf{aux}]$ comprises of the
+public staking key, the recovery tag, and the address's auxiliary information,
+which identifies its type. The semi-public attribute is the public payment key
+$\paymentkeyverify$, whereas the private attributes are the private keys
+$\stakingkeysign$ and $\paymentkeysign$.
+
+\myhalfbox{Protocol $\ProtoW$}{white!40}{white!10}{
+    \noindent \emph{Initialization:}
+        Upon receiving the message $\msg{Init}{}$ from $\p_{o}$, set $\masterprivkey
+        \xleftarrow{\$} \{0,1\}^\secparam$ and return $\msg{InitOk}{}$ to
+        $\p_{o}$.
+
+    \noindent \emph{Address Generation:}
+        Upon receiving $\msg{GenerateAddress}{\msf{aux}}$ from $\p_{o}$, compute the
+        index and child attributes as follows:
+        \begin{inparaenum}[i)]
+            \item pick an $i$ from the set $\indexSet$;
+            \item compute the key pair $(\paymentkeyverify_c, \paymentkeysign_c) =$\\ $\algohierarchicalkeygen(\langle \masterprivkey, \msf{payment}, i \rangle)$;
+            \item compute the tag $\msf{wrt} = \algorecoverytaggen(\paymentkeyverify_c)$.
+        \end{inparaenum}
+        Also:
+        \begin{itemize}
+            \item if $\msf{aux} = (\msf{base})$, compute $(\stakingkeyverify_c, \stakingkeysign_c) =$  $\algohierarchicalkeygen(\langle \masterprivkey, \msf{staking}, i \rangle)$;
+            \item else if $\msf{aux} = (\msf{pointer}, \stakingkeyverify)$, find $(\stakingkeyverify_c, \stakingkeysign_c) \in K: \stakingkeyverify = \stakingkeyverify_c$;
+            \item else if $\msf{aux} = (\msf{exile})$, set $(\stakingkeyverify_c, \stakingkeysign_c) = (\bot, \bot)$.
+        \end{itemize}
+        Then insert the list $\addresslist = \langle \stakingkeyverify_c, \msf{wrt},
+        \msf{aux}, \paymentkeyverify_c, \paymentkeysign_c, \stakingkeysign_c \rangle$
+        to $L$, create the address $\addr = \msf{GenAddr}(\langle \msf{aux},
+        \stakingkeyverify_c, \paymentkeyverify_c, \msf{wrt} \rangle)$, and insert the
+        tuple $\langle \addr, (\paymentkeyverify_c, \paymentkeysign_c) \rangle$
+        to $PK$. Then return $\msg{Address}{\addr}$ to $\p_{o}$. If $\msf{aux} =
+        \msf{base}$ also insert $(\stakingkeyverify_c,
+        \stakingkeysign_c)$ to $SK$ and send the message
+        $\msg{StakingKey}{\stakingkeyverify_c}$ to $\p{o}$.
+
+    \noindent \emph{Wallet Recovery:}
+        Upon receiving $\msg{RecoverWallet}{i_{max}}$ from $\p_{o}$, $\forall i
+        \in \indexSet: i < i_{max}$ set $(\paymentkeyverify_i,
+        \paymentkeysign_i) = \algohierarchicalkeygen(\langle \masterprivkey,
+        \msf{payment}, i \rangle)$ and return
+        $\msg{Tag}{\algorecoverytaggen(\paymentkeyverify_i)}$.
+
+    \noindent \emph{Address Recovery:}
+        Upon receiving from $\p_{o}$ the message $\msg{RecoverAddr}{\addr,
+        i_{max}}$, parse the address's attributes $(\stakingkeyverify, \msf{wrt},
+        \msf{aux}) = parsePubAttrs(\addr)$. If exists $i \in \indexSet: i <
+        i_{max}$, where $(\paymentkeyverify_i, \paymentkeysign_i) =
+        \algohierarchicalkeygen(\langle \masterprivkey, \msf{payment}, i \rangle)$
+        and $\algorecoverytaggen(\paymentkeyverify_i) = \msf{wrt}$, return
+        $\msg{RecoveredAddr}{\addr}$.
+
+    \noindent \emph{Issue Transaction:}
+        Upon receiving from $\p_{o}$ the message $\msg{Pay}{\assetset, \addr_s,
+        \addr_r, m}$, find $\langle \addr_s, \paymentkeypair \rangle \in PK$
+        and send the message $\msg{Transaction}{\tx,
+        \algosign(\paymentkeysign, \tx)}$ to $\p_{o}$, such that $\tx =
+        (\assetset, \addr_s, \addr_r, m)$.
+}{\label{fig:protocolWalletCore-1} The PoS core-wallet protocol. (Part 1)}
+
+\myhalfbox{Protocol $\ProtoW$}{white!40}{white!10}{
+    \noindent \emph{Verify Transaction:}
+        Upon receiving the message $\msg{VerifyPay}{\tx, \sign}$ from $\p_{o}$,
+        where $\tx = (\assetset, \addr_s, \addr_r, m)$ for some metadata string
+        $m$, find an entry $\langle \addr_s, \paymentkeypair \rangle$ in $PK$
+        and return the message $\msg{VerifiedPay}{\tx, \sigma,
+        \algoverify(\tx, \sign, \paymentkeyverify)}$ to $\p_{o}$.
+
+    \noindent \emph{Issue Staking:}
+        Upon receiving $\msg{Stake}{\tx_s}$ from $\p_{o}$ such that $\tx_s =
+        (\stakingkeyverify, m)$ for metadata $m$, find an entry
+        $(\stakingkeyverify, \stakingkeysign) \in SK$ and return
+        $\msg{Staked}{\tx_s, \algosign(\stakingkeysign, \tx_s)}$.
+
+    \noindent \emph{Verify Staking:}
+        Upon receiving the message $\msg{VerifyStake}{\tx_s, \sign}$ from the
+        party $\p_{o}$, where $\tx_s = (\stakingkeyverify, m)$ for metadata $m$,
+        find $(\stakingkeyverify, \stakingkeysign) \in SK$ and return the
+        message $\msg{VerifiedStake}{\tx_s, \sign, \algoverify(\tx_s, \sign,
+        \stakingkeysign)}$.
+}{\label{fig:protocolWalletCore-2} The PoS core-wallet protocol. (Part 2)}

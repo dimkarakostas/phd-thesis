@@ -1,0 +1,178 @@
+\subsection{Part 1: Stake Pool Management}\label{sec:management}
+
+The functionality's first part (Figure~\ref{fig:Fpool-1}) includes all
+operations that are not consensus-oriented. First, establishing a stake pool
+consists of two parts, defined as corresponding interfaces in the ideal
+functionality. The pool's members gather and jointly decide to create a staking
+pool; they contact each other, \eg via off-chain direct channels, agree on the
+pool's parameters, and generate its key. Importantly, the participants are
+aware of the total number of participants in the pool, as well as their
+weights. Then, the members of the pool perform a setup protocol and register
+the new pool via a registration certificate, which is signed by the pool's key
+and published on the ledger. Following, the pool receives rewards for
+participating in the consensus protocol. The rewards are managed by a smart
+contract and, at any point, each each party can withdraw their part, which is
+proportional to the internal stake distribution. Finally, to close the pool,
+the members sign and publish a revocation certificate.
+
+In more detail, the functionality $\Fpool$ interacts with $\totalParties$
+parties $\party_1, \dots, \party_\totalParties$ and is parameterized by:
+\begin{itemize}
+    \item the validation predicate $\algovalidate(\cdot, \cdot)$ which, given a
+        transaction $\tx$ and a chain $\chain$, defines whether $\tx$ can be
+        appended to $\chain$ (as part of a block);
+    \item the algorithm $\blockify$ which, given a set of transactions,
+        serializes them (deterministically) in a block;
+    \item the probability $\prob^{\subselectionParam, \adversarialParties,
+        \totalParties}$ that the elected committee, responsible for a
+        transaction's verification, is corrupted, dependent on the subselection
+        parameter $\subselectionParam$ and the number of corrupted parties
+        $\adversarialParties$ out of $\totalParties$ total parties.
+\end{itemize}
+
+It also keeps the following, initially empty, variables:
+\begin{inparaenum}[i)]
+    \item the signature threshold $\thold$;
+    \item the public key $\threshpubkey_{pool}$;
+    \item the reward address $\addr_{reward}$;
+    \item the set of valid and unpublished transactions $\mathsf{mempool}$;
+    \item a mapping of parties to weights $\members$;
+    \item a table of signatures $\mathsf{sigs}$.
+\end{inparaenum}
+
+\paragraph{Gathering and Registration}
+The first step in creating a pool is the gathering of parties, in order to
+collectively create the pool's public key $\threshpubkey_{pool}$. Following,
+the parties create and publish on the ledger the registration certificate
+$\cert_{reg}$, which contains the following:
+\begin{itemize}[noitemsep]
+    \item $\wfunc$: a mapping identifying each member's weight;
+    \item $\addr_{reward}$: the address which accumulates the pool's rewards;
+    \item $\threshpubkey_{pool}$: the pool's threshold public key;
+    \item $\threshsig_{pool}$: the signature of $\langle \wfunc, \addr_{reward}
+        \rangle$ created by $\threshpubkey_{pool}$.
+\end{itemize}
+
+\paragraph{Reward Withdrawal}
+During the life cycle of the pool, a member may want to withdraw the rewards
+received up to that point. As per the desiderata of
+Section~\ref{sec:collective-pool-desiderata}, any party should be able to do so, without the
+explicit permission of the other pool's members. Additionally, the rewards that
+each party receives should be proportional to its stake, \ie its weight within
+the collective pool. Reward withdrawal is implemented as the smart contract
+functionality $\rewardFunc$. The contract is initialized with the weight
+distribution of the pool's members and each member's public key. We assume that
+the contract is associated with an address and can receive funds,
+similar to real-world smart contract systems like
+Ethereum~\cite{wood2014ethereum}. The state transition functionality
+$\rewardFunc$ is defined in Figure~\ref{fig:rewardFunc} (following the ledger
+formalization of Section~\ref{sec:global-ledger}).
+
+\myhalfbox{Reward Smart Contract Functionality $\rewardFunc$}{white!40}{white!10}{
+    $\rewardFunc$ maintains a mapping $\wfunc$, of parties to weights,
+    and a variable $b$.
+
+    \noindent{\bf Initialization:}
+        Upon receiving $\msg{init}{\wfunc^\prime}$, forward it to $\iadv$. Upon receiving
+        a response $\msg{init-ok}{\addr_{sc}}$, set $\wfunc \leftarrow \wfunc^\prime$ and
+        return $\msg{init-ok}{\addr_{sc}}$.
+
+    \noindent{\bf Balance Update:}
+        On receiving $\msg{transaction}{\tx}$ from $\mc{U}$, such that $\tx =
+        \langle \addr_s, \addr_r, v, f \rangle $, if $\addr_s = \addr_{sc}$ set
+        $b := b - v$, else if $\addr_r = \addr_{sc}$ set $b := b + v$.
+
+    \noindent{\bf Withdrawal:}
+        Upon receiving $\msg{withdraw}{\addr, f}$ from the party $\p$, set $r =
+        \frac{\weight_p}{\sum_{p^\prime \in \wfunc} \weight_{p^\prime}} \cdot b$ and return
+        $\msg{transaction}{\langle \addr_{sc}, \addr, r, f \rangle}$.
+
+}{\label{fig:rewardFunc} The pool's Reward Smart Contract Functionality.}
+
+\paragraph{Closing}
+Eventually, the members halt the operation of the pool. In order to do so, they
+revoke the pool's registration by jointly producing a revocation certificate
+$\cert_{rev}$. The certificate is relatively simple, containing a timestamp $x$
+announcing the end of the pool and signed by the pool's public key
+$\threshpubkey_{pool}$.
+
+The first part of our functionality definition is given by
+Figure~\ref{fig:Fpool-1}, whereas the management routines, \ie the first part
+of the description, of our protocol construction is given by
+Figure~\ref{fig:Ppool-1}.
+
+\myhalfbox{Collective Pool Functionality $\Fpool^{\thold,\wfunc}$ (first part)}{white!40}{white!10}{
+    \noindent{\bf Gathering:}
+        Upon receiving $\msg{gather}{}$ from $\p$, forward it to $\iadv$. After
+        every party $\p_i, i \in [1, \totalParties]$ has submitted
+        $\mathsf{gather}$, upon receiving from $\iadv$
+        $\msg{gather-ok}{\threshpubkey_{pool}}$, store $\thold$ and
+        $\threshpubkey_{pool}$, add all party-weight pairs $(\p_{i}, \wfunc_i)$
+        to $\members$, and reply with
+        $\msg{gather-ok}{\threshpubkey_{pool}}$ to all parties.
+
+    \noindent{\bf Pool Registration:}
+        Upon receiving $\msg{register}{\members}$ from $\p$, forward it
+        to $\iadv$. After all parties $\p_i, i \in [1, \totalParties]$ have
+        submitted $\mathsf{register}$, upon receiving from $\iadv$
+        $\msg{register-ok}{\addr_{reward}, \threshsig_{pool}}$, set $\cert_{reg}
+        = \langle (\members, \addr_{reward}, \threshpubkey_{pool},
+        \threshsig_{pool}) \rangle$. Then check if $\forall (m, \sigma, b') \in
+        \mathsf{sigs}: \sigma \neq \threshsig_{pool}, (\cert_{reg},
+        \threshsig_{pool}, 0) \not \in \mathsf{sigs}$; if the checks hold,
+        insert $(\cert_{reg}, \threshsig_{pool}, 1)$ to $\mathsf{sigs}$.
+        Finally, store $\addr_{reward}$ and reply with
+        $\msg{register-ok}{\cert_{reg}}$.
+
+    \noindent{\bf Reward Withdrawal:}
+        Upon receiving the message $\msg{withdraw}{\addr, f}$ from $\p_{i}$,
+        forward it to $\iadv$. Then, compute $\reward =
+        \frac{\weight_{\p_i}}{\sum_{j = 1}^{\totalParties} \weight_{\p_j}}
+        \cdot \reward_{pool}$, where $\reward_{pool}$ is the funds of address
+        $\addr_{sc}$ as defined in $\Gledger$. Finally, return
+        $\msg{transaction}{\langle \addr_{sc}, \addr, \reward, f \rangle}$.
+
+    \noindent{\bf Closing:}
+        Upon receiving $\msg{close}{x}$ from $\p$, forward it to $\iadv$. After
+        a set of parties $\tholdset$ has submitted $\mathsf{close}$ for the
+        same $x$, if $\sum_{\p \in \tholdset} \weight_{\p} > \thold$, upon
+        receiving $\msg{close-ok}{\threshsig_{pool}}$ from $\iadv$, check if
+        $\forall (m, \sigma, b') \in \mathsf{sigs}: \sigma \neq
+        \threshsig_{pool}, (x, \threshsig_{pool}, 0) \not \in \mathsf{sigs}$;
+        if the checks hold, insert $(x, \threshsig_{pool}, 1)$ to
+        $\mathsf{sigs}$. Finally, return to all parties
+        $\msg{close-ok}{\cert_{rev}}$, with $\cert_{rev} = \langle x,
+        \threshsig_{pool} \rangle$.
+
+}{\label{fig:Fpool-1} The first part of the Collective Pool Functionality, parameterized with threshold $\thold$ and weight mapping $\wfunc$, refers to the creation and management of the pool (the second part is given by Figure~\ref{fig:Fpool-2}).}
+
+\myhalfbox{Collective Pool Protocol $\Ppool^{\thold,\wfunc}$ (first part)}{white!40}{white!10}{
+    \noindent{\bf Gathering:}
+        Upon receiving $\msg{gather}{}$, send $\msg{KeyGen}{}$ to $\Fweight$,
+        with $sid$ containing the weight mapping $\wfunc$ and the threshold
+        $\thold$. Upon receiving the reply
+        $\msg{KeyGen}{\threshpubkey_{pool}}$, return
+        $\msg{gather-ok}{\threshpubkey_{pool}}$.
+
+    \noindent{\bf Pool Registration:}
+        Upon receiving $\msg{register}{\members}$, send
+        $\msg{init}{\members}$ to $\rewardFunc$ and wait for the reply
+        $\msg{init-ok}{\addr_{reward}}$. Then, set $m = (\members,
+        \addr_{reward})$ and send $\msg{Sign}{m}$ to $\Fweight$. Upon receiving a
+        reply $\msg{Sign}{m, \threshsig_{pool}}$, return
+        $\msg{register-ok}{\cert_{reg}}$, where $\cert_{reg} = \langle
+        (\members, \addr_{reward}, \threshpubkey_{pool},
+        \threshsig_{pool}) \rangle$.
+
+    \noindent{\bf Reward Withdrawal:}
+        Upon receiving $\msg{withdraw}{\addr, f}$, forward it to $\rewardFunc$.
+        Upon receiving a response $\msg{transaction}{\langle \addr_{sc}, \addr,
+        r, f \rangle}$ return it.
+
+    \noindent{\bf Closing:}
+        Upon receiving $\msg{close}{x}$, send $\msg{Sign}{x}$ to $\Fweight$.
+        Upon receiving a reply $\msg{Sign}{x, \threshsig_{pool}}$, return
+        $\msg{close-ok}{\cert_{rev}}$ with $\cert_{rev} = \langle x,
+        \threshsig_{pool} \rangle$.
+
+}{\label{fig:Ppool-1} The first part of the Collective Pool Protocol, which describes the set of management operations (the second part is given by Figure~\ref{fig:Ppool-2}).}

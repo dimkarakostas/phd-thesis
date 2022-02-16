@@ -1,0 +1,13 @@
+\paragraph{Contributions}
+The core contribution of this chapter is the ideal functionality $\Fpool$, a
+simulation-based security definition of collective stake pools, which captures
+the security properties of our collective pool scheme. We then describe
+$\Ppool$, a distributed protocol executed by a set of $\totalParties$ parties
+$\partyset$ which realizes $\Fpool$. A major consideration and performance
+enhancement of our design is load balancing of transaction verification. Each
+transaction is verified by a (deterministically elected) committee of parties,
+whose size is a tradeoff between balancing workload, \ie not requiring each
+party to verify every transaction, and reducing trust on the chosen
+validator(s). We thus construct a distributed mempool, \ie a collectively
+managed set of unpublished transactions, \st if a majority of the committee's
+members are honest, transaction verification is secure.

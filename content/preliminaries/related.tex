@@ -1,0 +1,69 @@
+\section{Literature Overview}\label{sec:related}
+
+We now overview notable works that pertain to the entire scope of the thesis.
+Following, each individual chapter focuses on the body of literature related to
+its specific research questions.
+
+\subsection{Bitcoin Formal Models}
+The importance of formal methods for analyzing Bitcoin is well understood, with
+existing literature showcasing different approaches. Garay
+\etal~\cite{EC:GarKiaLeo15,C:GarKiaLeo17}, after extracting and analyzing the
+core Bitcoin blockchain protocol, presented a formal abstraction to prove that
+Bitcoin satisfies a set of security and quality properties. Pass
+\etal~\cite{EC:PasSeeShe17} analyzed the consistency and liveness properties of
+the consensus protocol in an asynchronous setting, proving Bitcoin secure
+assuming an upper bound on the network delay. Badertscher \etal~\cite{C:BMTZ17}
+suggested a Universally Composable treatment of the Bitcoin ledger, defining
+Bitcoin's goals and proving that their model is securely realized in the UC
+framework. Transactions, being a core part of Bitcoin, have also attracted
+attention; notably, Atzei \etal~\cite{FC:ABLZ18} proposed a formal model of
+Bitcoin transactions, to prove security \eg against double-spending attacks.
+
+\subsection{Proof-of-Stake Protocols}
+The cryptographic literature has seen a number of PoS protocols in the past
+years. A family of such protocols, which was initiated with
+Ouroboros~\cite{C:KRDO17} and continued with Ouroboros Praos~\cite{EC:DGKR18},
+Ouroboros Genesis~\cite{CCS:BGKRZ18}, and Ouroboros
+Crypsinous~\cite{SP:KKKZ19}, provides a wide range of threat model
+considerations, relevant to PoS systems, and offers eventual guarantees of
+liveness and persistence, similar to Bitcoin.
+Algorand~\cite{EPRINT:CGMV18,EPRINT:GHMVZ17} is a protocol which employs
+Byzantine Agreement to achieve the necessary properties of a PoS setting, as
+well as transaction finality in (expected) constant time. Snow
+White~\cite{FC:DaiPasShi19,AC:PasShi17} similarly uses the notion of
+``robustly reconfigurable consensus'', which is specially designed to cope with
+the lack of participation of users in the consensus protocol.
+
+Real-world PoS implementations often opt for stake representation and
+delegation, similar to our work in Chapter~\ref{chap:delegation}.  Systems like
+Cardano~\cite{cardano}, EOS~\cite{eosWhitepaper}, and (to
+some extent) Tezos~\cite{goodman2014tezos}, employ different consensus
+protocols, but all enforce that a (relatively small) subset of representatives
+is elected to participate.  Decred~\cite{decred} takes a somewhat different
+approach, where stakeholders buy a ticket for participation, akin to PoS with
+optional participation. However, these systems typically assume single parties
+that act as delegates, either individually or as pool operators, a restriction
+that Chapter~\ref{chap:collective-pools} directly aims at relaxing.
+
+\subsection{Blockchain Incentives}
+The seminal work of Selfish
+Mining~\cite{FC:EyaSir14,FC:SapSomZoh16,kiayias2016blockchain} showed that
+honest behavior is not incentive-compatible. However, alternative reward
+sharing mechanisms in the PoS setting may make it feasible to perform better in
+terms of incentive compatibility. For instance, Ouroboros~\cite{C:KRDO17} can
+be designed from the ground up to be a Nash equilibrium under certain plausible
+conditions. The question of how to incentivize parties in PoS systems to form a
+desired number of stake pools was further studied
+in~\cite{DBLP:conf/eurosp/BrunjesKKS20}. The problem that these works study,
+and which we also explore in Chapter~\ref{chap:compliance}, is designing the
+incentives of blockchain systems from the designer's point of view, so that
+participants do not deviate from the prescribed protocol. One related question
+is how fair the protocol is to participants themselves, particularly to honest
+participants. The Bitcoin Backbone and Selfish Mining works include attacks in
+which an adversary can strategically the ledger's performance, causing the
+number of blocks and, in turn, the respective rewards, to be disproportionate
+to their contributed computational power, thereby harming fairness towards
+honest participants. In the PoW setting, Fruitchains~\cite{PODC:PasShi17}
+proposes a protocol which solves this problem via the notion of ``fair''
+rewards, \ie rewards in exact proportion to the computational power of each
+party.

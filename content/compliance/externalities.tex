@@ -1,0 +1,78 @@
+\section{Externalities}\label{sec:externalities}
+
+In this section, we enhance our analysis with parameters external to
+the distributed system. First, we introduce an exchange rate,
+to model the rewards' price in the same unit of account as the cost. We
+analyze how the exchange rate should behave to ensure compliance, assuming
+an external utility which is awarded for an infraction. Following,
+we identify historical patterns to approximate this behavior and, finally,
+introduce penalties, which disincentivize infraction when the exchange rate
+behavior does not suffice.
+
+\subsection{Utility under Externalities}
+
+In distributed ledger systems, rewards are denominated in the ledger's native
+currency (\ie satoshi in Bitcoin, wei in Ethereum, etc). However, cost is
+typically denominated in fiat (USD, GBP, etc). Therefore, we introduce
+an \emph{exchange rate}, between the ledger's native currency and USD, to
+denominate the rewards and cost in the same unit of account and precisely
+estimate a party's utility.
+
+The exchange rate $\exchangeRate_{\execution}$ is a random variable,
+parameterized by a strategy profile $\profile$. For a trace
+$\executionTrace_{\profile}$ under $\profile$, the exchange rate takes a
+non-negative real value. The exchange rate is applied once, at the end of the
+execution. Intuitively, this implies that a party eventually sells their
+rewards at the end of the execution. Therefore, its utility depends on the
+accumulated rewards, during the execution, and the exchange rate at the end.
+
+The infraction predicate expresses a deviant behavior that parties may exhibit.
+So far, we considered distributed protocols in a standalone fashion, analyzing
+whether they incentivize parties to avoid infractions. In reality, a ledger
+exists alongside other systems, and a party's utility may depend on parameters
+external to the distributed ledger. For instance, double spending against
+Bitcoin is a common hazard, which does not increase an attacker's \emph{Bitcoin
+rewards}, but awards them external rewards, \eg goods that are purchased with
+the double-spent coins.
+
+The external -- to the ledger -- reward is modeled as a random variable
+$\utilityBoost_{\party, \execution_\profile}$, which takes non-negative integer
+values. Similarly to the rewards' random variable, it is
+parameterized by a
+party $\party$ and a strategy profile $\profile$.  The infraction utility is
+applied once when computing a party's utility and has the property that, for
+every trace $\executionTrace$ during which a party $\party$ performs no
+infraction, it holds that $\utilityBoost_{\party, \executionTrace} = 0$.
+Therefore, a party receives these external rewards only by performing an
+infraction.
+
+Taking into account the exchange rate and the external infraction-based
+utility, we now define a new utility. As with
+Definition~\ref{def:utility}, the new utility $\utility$ takes two forms,
+\emph{Reward} and \emph{Profit}. For the former, $\utility$ normalizes the protocol
+rewards by applying the exchange rate and adds the external, infraction
+rewards. For \emph{Profit}, it also subtracts the cost (which is already
+denominated in the base currency). Definition~\ref{def:utility-external} defines the utility under
+externalities. For ease of reading, we use the following notation:
+\begin{itemize}
+    \item $\rewardVal_{\party, \profile} = E[\reward_{\party, \execution_\profile}]$;
+    \item $\exchangeRateVal_\profile = E[\exchangeRate_{\execution_\profile}]$;
+    \item $\utilityBoostVal_{\party, \profile} = E[\utilityBoost_{\party, \execution_{\profile}}]$;
+    \item $\costVal_{\party, \profile} = E[\cost_{\party, \execution_\profile}]$.
+\end{itemize}
+
+\begin{definition}\label{def:utility-external}
+    Let:
+    \begin{inparaenum}[i)]
+        \item $\profile$ be a strategy profile;
+        \item $\execution_\profile$ be an execution under $\profile$;
+        \item $\exchangeRateVal_{\profile}$ be the (expected) exchange rate of $\execution_\profile$;
+        \item $\utilityBoostVal_{\party, \profile}$ be the (expected) external rewards of $\party$ under $\profile$.
+    \end{inparaenum}
+    We define two types of utility $\utility_{\party}$ of a party $\party$ for
+    $\profile$ under externalities:
+    \begin{enumerate}
+        \item \emph{Reward}: $\utility_{\party}(\profile) = \rewardVal_{\party, \profile} \cdot \exchangeRateVal_\profile + \utilityBoostVal_{\party, \profile}$
+        \item \emph{Profit}: $\utility_{\party}(\profile) = \rewardVal_{\party, \profile} \cdot \exchangeRateVal_\profile + \utilityBoostVal_{\party, \profile} - \costVal_{\party, \profile}$
+    \end{enumerate}
+\end{definition}

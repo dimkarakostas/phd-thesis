@@ -1,0 +1,176 @@
+\section{Execution Model}\label{sec:execution-model}
+
+In our setting, the ledger's maintainers are the stake pools. An adversary can
+break the ledger's properties by corrupting a set of stake pools which are
+allocated a majority of the total stake. Consequently, since we assume that the
+majority of stake is owned by honest stakeholders, the adversary needs to
+corrupt at least one pool to which honest players delegate. Especially in the
+collective setting, the adversary may control a subset of the pool's members,
+although not a majority of them. Therefore, our work considers adversaries who
+attempt to violate the security of a collectively-owned stake pool while
+controlling a minority of its members. Security violations include producing
+invalid blocks or transactions, as well as abstaining from join the consensus
+protocol.
+
+In terms of message delivery, we assume a synchronous network.  As such, the
+adversary may delay messages up to an upper bound. This assumption will prove
+particularly useful in the implementation of the collective pool protocol,
+during which participants employ consensus and broadcast algorithms. We note
+that, although this assumption is realizable in a setting where parties are
+well-connected, it does not cover possible real-world threats, such as eclipse
+attacks. Nonetheless, exploring variations of the collective pool functionality
+and protocol designs over semi-synchronous or asynchronous networks presents an
+interesting problem, which would offer a more robust implementation.
+
+\subsection{Weighted Threshold Digital Signatures}\label{sec:thold-sign}
+
+In a weighted threshold digital signature
+scheme~\cite{morillo1999weighted,Shamir79}, each party $\party$ is associated
+with a (integer) weight $\wfunc[\party] \geq 0$, where $\wfunc$ is a mapping of
+players to weights. A signature can be produced by any set of keys, the
+aggregate weight of which is above the defined threshold. The weighted
+threshold signature scheme (Definition~\ref{def:thresh-sig}) is constructed by
+combining a digital signature scheme (Definition~\ref{def:digsign}) with a
+weighted threshold secret sharing scheme (Definition~\ref{def:thresh-ss}).
+Additionally, standard threshold signatures is a special case of the weighted
+variant, with $\wfunc[\party] = 1$ for every party $\party$.
+
+\begin{definition}[Weighted Threshold Secret Sharing]\label{def:thresh-ss}
+    A $(\thold, \totalParties, \wfunc)$-threshold secret sharing of a secret
+    $x$ consists of $n$ shares $x_1, \dots, x_{\totalParties}$, each associated
+    with a weight $\weight_1, \dots, \weight_\totalParties$, such that an
+    efficient algorithm exists, that takes as input a set of shares
+    $\tholdset$, with $\sum_{i \in \tholdset} \weight_i > \thold$, and
+    outputs the secret value $x$. Any set of shares $\tholdset$
+    with $\sum_{i \in \tholdset} \weight_i \leq \thold$ cannot obtain any
+    information about the secret $x$.
+\end{definition}
+
+\begin{definition}[Weighted Threshold Signature]\label{def:thresh-sig}
+    Given a signature scheme $\sigscheme$, a $(\thold, \totalParties,
+    \wfunc)$-threshold signature scheme $\threshsigscheme = \langle \threshkeygen, \threshsign, \threshver \rangle$, given $\totalParties$ parties
+    $\p_1, \dots, \p_{\totalParties} \in \parties$, is defined as:
+    \begin{itemize}
+        \item $\threshkeygen(1^\secparam, \wfunc) \rightarrow (\keyverify,
+            \keysign_1, \dots, \keysign_n)$:
+            given the security parameter $\secparam$, outputs a public key
+            $\keyverify$ and a list of private keys $\keyset = [\keysign_{1}, \dots,
+            \keysign_{\totalParties}]$ which form a $(\thold, \totalParties,
+            \wfunc)$-threshold secret sharing of $\keysign$; the pair
+            $(\keyverify, \keysign)$ has the same distribution as the keys
+            output by $\algokeygen$ of Definition~\ref{def:digsign};
+
+        \item $\threshsign(\mesg, \tholdset) \rightarrow \signature$:
+            given a message $\mesg$ and a set of private keys
+            $\tholdset$, $\tholdset \subseteq \keyset$, outputs a
+            signature $\signature$;
+
+        \item $\threshver(\mesg, \keyverify, \signature) \rightarrow \{0,1\}$: a
+            deterministic algorithm that, given a message $\mesg$, a public key
+            $\keyverify$, and a signature $\signature$ outputs $1$ if a
+            signature is valid \wrt message $m$ and verification key
+            $\keyverify$ (resp. $0$ if the signature is invalid).
+    \end{itemize}
+
+    A $(\thold, \totalParties, \wfunc)$-threshold signature scheme
+    $\threshsigscheme$ is $\eufcma$ if it presents the properties of
+    Definition~\ref{def:digsign} and the following:
+
+    {\bf Threshold Completeness:} For any message $\mesg$, it holds:
+    \begin{align}
+        \Pr[(\keyverify, \keyset) \leftarrow \threshkeygen(1^\secparam, \wfunc), \signature \leftarrow \threshsign(\mesg, \tholdset),  \nonumber \\
+        \sum_{k \in \tholdset} \weight_k > \thold: 0 \leftarrow \algover(\mesg, \signature, \keyverify)]
+        \leq \negl(\secparam) \nonumber
+    \end{align}
+    and
+    \begin{align}
+        \Pr[(\keyverify, \keyset) \leftarrow \threshkeygen(1^\secparam, \wfunc), \signature \leftarrow \threshsign(\mesg, \tholdset),  \nonumber \\
+        \sum_{k \in \tholdset} \weight_k \leq \thold: 1 \leftarrow \algover(\mesg, \signature, \keyverify)]
+        \leq \negl(\secparam) \nonumber
+    \end{align}
+    where all the probabilities are computed over the random coins of the
+    key generation and sign algorithms.
+\end{definition}
+
+\subsection{Transactions, Blocks, and the Global Ledger}\label{sec:global-ledger}
+Our protocol utilizes two features of the Kachina~\cite{kachina} framework: i)
+the formalization of the ledger and ii) smart contracts.
+
+\paragraph{The Simple Ledger Functionality}
+Our collective pool protocol interacts with a ledger functionality in a hybrid
+execution.  One option is the formalization of Bitcoin's ledger from~\cite{C:BMTZ17}.
+However, this functionality is local, while we would prefer a global
+functionality, following the Global UC Framework~\cite{TCC:CDPW07}, hence we
+will use the $\Gledger$ functionality from Kachina~\cite{kachina}. The
+functionality is available in Figure~\ref{fig:gledger}, where $\prec$ defines
+the prefix operation, \ie $\contractstate\prec\contractstate^\prime$ means the
+state $\contractstate$ is included in $\contractstate^\prime$, and, for
+readability and consistency purposes, we rename \emph{transaction} ($\tau$) to
+\emph{block} ($b$).
+
+\myhalfbox{Global Ledger Functionality $\Gledger$}{white!40}{white!10}{
+    The functionality keeps a state $\contractstate$ and a mapping $M$ of parties to
+    states, both initially empty.
+
+    \begin{itemize}
+        \item When receiving a message $(\mathsf{SUBMIT}, b)$ from a party
+            $p$, query $\adversary$ with $(\mathsf{BLOCK}, b)$.
+
+        \item When receiving a message $\mathsf{READ}$ from a party $p$,
+            return $M(p)$; if $p$ is $\adversary$, it returns $\contractstate$.
+
+        \item When receiving a message $(\mathsf{EXTEND}, \contractstate^\prime)$ from
+            $\adversary$, set $\contractstate \leftarrow \contractstate || \contractstate'$.
+
+        \item When receiving a message $(\mathsf{ADVANCE}, p, \contractstate^\prime)$ from
+            $\adversary$, if $M(p) \prec \contractstate^\prime \prec \contractstate$ then set $M(p)
+            \leftarrow \contractstate^\prime$.
+    \end{itemize}
+
+}{\label{fig:gledger} The Simple Global Ledger Ideal Functionality.}
+
+The $\Gledger$ Functionality is generic enough to abstract transactions and
+blocks, focusing on the ledger's properties. However, in our setting we need to
+define these objects, in order to better formulate a real-world blockchain.
+
+In this chapter, a transaction is $\tx = \langle \addr_s,
+\addr_r, v, f \rangle$, where
+\begin{inparaenum}[i)]
+    \item $\addr_s, \addr_r \in \{0, 1\}^*$ are the sender's and receiver's
+        addresses respectively,
+    \item $v \in \mathbb{R}$ is the value transferred from $\addr_s$ to
+        $\addr_r$, and
+    \item $f \in \mathbb{R}$ is the fees of the transaction.
+\end{inparaenum}
+A block consists of an ordered list of transactions. To organize transaction in
+blocks, we assume a function $\blockify$ which, given a set of transactions and
+a chain, returns a block which can extend the chain, \ie satisfies the validity
+requirements of the system.
+
+\paragraph{Reward Management via Smart Contracts}
+We also employ the formal model of smart contracts from~\cite{kachina}. This
+model considers smart contracts from a privacy-preserving perspective.
+However, it also provides a UC definition of standard smart contracts,
+consisting of the universal machine $\mc{U}$, which acts as the oracle over the
+ledger's state, and the \emph{core} contract $\Gamma$, as illustrated by
+Figure~\ref{fig:rewardFunc} adapted to our stake pool design. In our setting,
+the latter relates directly to the management of the rewards for the members of
+the pool, and therefore it is presented as an auxiliary (reward) functionality
+$\rewardFunc$ in Section~\ref{sec:management}.
+
+\paragraph{Delegation and Stake Pools}\label{sec:delegation}
+We utilize the UC Model for delegated PoS systems, as presented in
+Chapter~\ref{chap:delegation}. This framework partially fulfills our earlier
+desiderata. In particular, \emph{Prevention of Double Stake Allocation} and
+\emph{Public Verifiabilitty} are addressed by the certificate-based
+registration and revocation mechanisms.  However, the remaining items do not
+seem immediately solved without further assumptions. For instance, if the
+members have the same proportion of shares, a standard threshold signature
+scheme could address more of our desiderata, \eg \emph{Offline and Online
+Participation}, \emph{Pool Proportional Rewards}, \emph{Joint Control of
+Rewards}, and \emph{Robustness against Aborting}.  Following, reconfiguration
+of the pool is accomplished by regenerating the registration certificate and
+the pool's threshold key. Other desiderata can be approached in a similar
+fashion. Thus, our idea is to generalize the access structure of an efficient
+threshold signature scheme to add ``weight'' capabilities, such that the
+weights capture the pledged stake distribution among the pool's members.

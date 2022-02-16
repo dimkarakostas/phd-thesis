@@ -1,0 +1,58 @@
+\section{Incentives Analysis}\label{sec:incentives}
+
+Although, as shown in Theorem~\ref{thm:collective-pool}, $\Ppool$ is secure, it
+is unclear whether rational users will opt for using it. In this section, we
+discuss the incentive compatibility of $\Ppool$. We identify its shortcomings
+and propose a minor change, such that rational members cannot gain more rewards
+by deviating from it.
+
+First, we consider the cost of each operation performed in $\Ppool$. Signing
+operations does not incur any cost, thus pool registration and revocation are
+cost-free. Block production depends on the internal workings of $\blockify$.
+For instance, solving the Knapsack problem can be expensive, while a greedy
+algorithm that prioritizes high-fee transactions is typically not. Therefore,
+without loss of generality, we also assume that block production is cost-free.
+However, both mempool update and transaction verification incur costs
+$\cost_{mu}$ and $\cost_{tv}$ respectively. A mempool consists of millions of
+transactions and verifying them requires an accurate view of the
+ledger. Thus, both objects may require significant amounts of computations
+and storage.\footnote{As of January 2021, the Bitcoin chain is
+roughly $320$GB and increases linearly over time.
+(\url{https://www.blockchain.com/charts/blocks-size})}
+
+We focus on the \emph{profit} of each member, \ie the rewards subtracted by
+the cost of executing $\Ppool$. The core observation is that a member $\party$
+receives $\reward_{\party} = \frac{\weight_{\party}}{\sum_{\party' \in \wfunc}
+\weight_{\party'}}$ of the total pool's rewards \emph{regardless of its
+performance}. For instance, if $\party$ acts only on the pool's
+creation, it still receives its proportional share of rewards for the blocks
+produced by the rest of the pool. Therefore, as long as a member believes that
+the other members act honestly, it is incentivized to abstain and minimize its
+cost, thus maximizing its profit. Naturally, if all parties follow this
+strategy, the pool produces no blocks and receives no rewards.
+
+A possible solution to the Free Rider problem above is to penalize a party
+for misbehaving.  However, identifying misbehavior is not straightforward. For
+instance, a party $\party$ who inputs $0$ to $\Pconsensus$ for a transaction
+$\tx$ may do so either because the transaction is invalid or because it
+didn't perform validation and input $0$ by default. Our approach is to
+penalize a party when diverging from the rest of the pool. In the previous
+example, if the output of $\Pconsensus$ is $1$, then $\party$ incurs a fixed
+penalty $P_{tv}$. Similarly, if a party fails to sign a new block
+then it incurs a (fixed) penalty $P_{mu}$. The penalty amount,
+which is withheld from $\party$, is then distributed equally among the other
+pool members.  To incentivize $\party$ to follow $\Ppool$ the penalties should
+be high enough; specifically, it should hold $P_{tv} >
+\cost_{tv}$ and $P_{mu} > \cost_{mu}$.  If all parties follow
+$\Ppool$, diverting incurs a cost $P_{mu} - \cost_{mu} > 0$
+(resp. $P_{tv} - \cost_{tv} > 0$), thus the new protocol is an
+equilibrium.
+
+Finally, penalties can be automatically enforced via an interface to the smart
+contract $\rewardFunc$ which, given a proof of misbehavior, reduces the
+misbehaving party's rewards accordingly. For transaction verification, a proof
+of misbehavior is the transcript of $\Pconsensus$, which describes the
+consensus sub-protocol's execution. For block issuing, we can use a threshold
+signature scheme with identifiable aborts~\cite{EPRINT:GenGol20,CCS:CGGMP20},
+which allows to identify the parties that do not participate in the signing of
+a block.

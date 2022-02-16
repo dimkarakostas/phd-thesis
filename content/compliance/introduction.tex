@@ -1,0 +1,103 @@
+With the advent of Bitcoin~\cite{nakamoto2008bitcoin} the economic aspects of
+consensus protocols came to the forefront. While classical literature in
+consensus primarily dealt with ``error models'', such as fail-stop or Byzantine
+\cite{DBLP:journals/jacm/PeaseSL80}, the pressing question post-Bitcoin is
+whether the incentives of the participants align with what the consensus
+protocol asks them to do.
+
+Motivated by this, existing literature pursued various research paths.
+One line of work investigated
+whether the Bitcoin protocol is an equilibrium under certain conditions
+\cite{KrollDaveyFeltenWEIS2013,kiayias16EC}. Another, pinpointed protocol
+deviations that can be more profitable for some players, assuming others follow
+the protocol~\cite{FC:EyaSir14,FC:SapSomZoh16,FCW:JLGVM14,CCS:CKWN16}.
+Some works proposed tweaks towards improving the underlying blockchain protocol
+in various settings~\cite{FC:FKORVW19,koutsoupias19www}, game-theoretic studies
+of pooling behavior~\cite{lewenberg15,CCS:CKWN16,ITCS:ArnWei19}, as well as
+equilibria involving abstaining from the protocol~\cite{DBLP:conf/ec/FiatKKP19}
+in high cost scenaria. Going beyond consensus, economic mechanisms have also
+been considered in the context of multi-party
+computation~\cite{CCS:KumMorBen15,FC:DavDowLar19,FC:DavDowLar18}, to
+disincentivize ``cheating''.
+Finally, a large body of research was dedicated to
+optimizing particular attacks; respresentative works
+\begin{inparaenum}[i)]
+    \item identify optimal selfish mining strategies~\cite{FC:SapSomZoh16};
+    \item propose a framework~\cite{CCS:GKWGRC16} for quantitatively
+    evaluating blockchain parameters and identifies optimal strategies for
+    selfish mining and double-spending, taking into account network delays;
+    \item propose alternative strategies~\cite{EPRINT:NKMS15}, that are more
+        profitable than selfish mining.
+\end{inparaenum}
+
+Though the above works provide some glimpses on how Bitcoin and related
+protocols behave from a game-theoretic perspective, they still offer very
+little guidance on how to design new consensus protocols. This is a problem of
+high importance, given the current negative light shed on Bitcoin's perceived
+energy inefficiency and carbon footprint~\cite{martin2021energy} that
+asks for alternative protocols. Proof-of-Stake (PoS) ledgers is currently the
+most prominent alternative to Bitcoin's Proof-of-Work (PoW) mechanism. While
+PoW requires computational effort to produce valid messages, \ie blocks which
+are acceptable by the protocol, PoS relies on each party's stake, \ie the
+assets they own, and each block is created at (virtually) no cost.
+Interestingly, while it is proven that PoS protocols are Byzantine resilient
+\cite{C:KRDO17,EPRINT:CGMV18,EPRINT:GHMVZ17,buterin2017casper} and are even
+equilibriums under certain conditions \cite{C:KRDO17}, their security is
+heavily contested by proponents of PoW protocols via an economic argument. In
+particular, the argument termed the \emph{nothing-at-stake}
+attack~\cite{li2017securing,ethereumFaq,nothing-at-stake-1} asserts that
+parties who maintain a PoS ledger will opt to produce conflicting blocks,
+whenever possible, to maximize their expected rewards.
+
+What merit do these criticisms have?  Participating in a blockchain protocol is
+a voluntary action that involves a participant downloading the software,
+committing some resources, and running the software. Furthermore, especially
+given the open source nature of these protocols, nothing prevents the
+participant from modifying the behaviour of the software in some way and engage
+with the other parties following a modified strategy. There are a number of
+adjustments that a participant can do which are undesirable, \eg
+\begin{inparaenum}[i)]
+    \item run the protocol intermittently instead of continuously;
+    \item not extend the most recent ledger of transactions they are aware of;
+    \item extend simultaneously more than one ledger of transactions.
+\end{inparaenum}
+One can consider the above as fundamental {\em infractions} to the protocol
+rules and they may have serious security implications, both in terms of the
+consistency and the liveness of the underlying ledger.
+
+To address these issues, many blockchain systems introduce additional
+mechanisms on top of Bitcoin incentives, frequently with only rudimentary game
+theoretic analysis. These include:
+\begin{inparaenum}[i)]
+    \item rewards for ``uncle blocks'' in Ethereum;
+    \item stake delegation~\cite{eosWhitepaper}  in Eos and Polkadot, where
+    users assign their participation rights to delegates, as well as stake
+    pools in Cardano \cite{SCN:KarKiaLar20};
+    \item penalties~\cite{buterin2017casper,casper-incentives} for misbehavior
+    in Ethereum 2.0, that enforce forfeiture of large deposits (referred to as
+    \emph{``slashing''}) if a party misbehaves, in the sense of being offline
+    or using their cryptographic keys improperly.
+\end{inparaenum}
+The lack of thorough analysis of these mechanisms is of course a serious
+impediment to the wider adoption of these systems.
+
+For instance, forfeiting funds may happen inadvertently, due to server
+misconfiguration or software and hardware bugs~\cite{khatri2021slashed}.
+A party that employs a redundant configuration with multiple replicas, to
+increase its crash-fault tolerance, may produce conflicting blocks if, due to a
+faulty configuration or failover mechanism, two replicas come alive
+simultaneously.  Similarly, if a party employs no failover mechanism and
+experiences network connectivity issues, it may fail to participate. Finally,
+software or hardware bugs can always compromise an -- otherwise safe and secure
+-- configuration.  This highlights the flip side of such penalty mechanisms:
+participants may choose to not engage, (\eg to avoid the risk of forfeiting
+funds, or because they do not own sufficient funds to make a deposit), or, if
+they do engage, they may steer clear of fault-tolerant sysadmin practices, such
+as employing a failover replica, which could pose quality of service concerns
+and hurt the system in the long run.
+
+The above considerations put forth the fundamental question that motivates our
+work: {\em How effective are blockchain protocol designs in disincentivizing
+particular infractions?} In more detail, the question we ask is whether selfish
+behavior can lead to deviations, starting with a given blockchain protocol as
+the initial point of reference of honest --- compliant --- behavior.

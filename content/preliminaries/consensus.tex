@@ -1,0 +1,83 @@
+\section{Distributed Ledgers}
+
+We now overview the problem of constructing a secure distributed ledger.
+Specifically, starting from the problem of consensus, a fundamental problem of
+distributed computing on which distributed ledgers are based, we provide formal
+definitions for the problem space that blockchain protocols aim to solve.
+
+\subsection{Consensus}
+
+The consensus problem, introduced in the seminal work of Shostak, Pease, and
+Lamport~\cite{lamport1982byzantine,pease1980reaching}, is the setting where a
+set of parties, each with its own input, need to reach agreement and output the
+same value. A protocol that solves the consensus problem demonstrates three
+core properties~\cite{koulouris2002distributed}, namely termination, agreement,
+and validity (Definition~\ref{def:consensus}).
+
+\begin{definition}[Consensus]\label{def:consensus}
+    A consensus protocol $\proto$, which is performed among $\totalParties$
+    parties $\party_i$, each with input $v_i$, satisfies the following
+    properties:
+    \begin{itemize}
+        \item \emph{Termination:} eventually each correct process outputs a
+            single value;
+        \item \emph{Agreement:} all correct processes output the same value;
+        \item \emph{Validity:} if all correct processes start $\proto$
+            with the same input $v$, then every correct process outputs $v$.
+    \end{itemize}
+\end{definition}
+
+\subsection{Reliable Broadcast}
+
+A problem close, but not identical, to consensus is that of Reliable Broadcast
+(RBC), which will prove useful in the construction of the collective pool of
+Chapter~\ref{chap:collective-pools}. Briefly, a RBC protocol ensures that a
+message output by an honest party is eventually broadcast and output by all
+other honest parties. Definition~\ref{def:broadcast} describes RBC, following
+the formalization of~\cite{PODC:CJKR12,cryptoeprint:2021:671}.
+
+\begin{definition}[Reliable Broadcast]\label{def:broadcast}
+    Let $\party_s$ be a designated sender of its input $b_{in}$. A Reliable
+    Broadcast (RBC) protocol, which is performed among $\totalParties$ parties,
+    satisfies the following properties;
+    \begin{itemize}
+        \item \emph{Safety}:
+            \begin{inparaenum}[i)]
+                \item \emph{Consistency}: if two honest parties output values
+                    $b, b'$ respectively, then $b = b'$;
+                \item \emph{Integrity}: if $\party_s$ is honest, no honest
+                    party outputs a value $b \neq b_{in}$.
+            \end{inparaenum}
+        \item \emph{Liveness}:
+            \begin{inparaenum}[i)]
+                \item \emph{Validity}: if $\party_s$ is honest, then all honest
+                    parties output some value;
+                \item \emph{Totality}: if an honest party commits a value,
+                    then all honest parties output some value.
+            \end{inparaenum}
+    \end{itemize}
+\end{definition}
+
+\subsection{Distributed Ledger}\label{subsec:distributed-ledger}
+
+A ledger is an append-only list of ordered transactions: $\ledger = [\tx_0,
+\dots, \tx_j]$. A distributed ledger is a ledger that is maintained in a
+decentralized manner, \ie by multiple parties without a single central
+authority. Intuitively, a ledger can be seen as a repetitive execution of a
+consensus protocol, where the input is a transaction. As
+Definition~\ref{def:secure-ledger} shows, a distributed ledger is secure if all
+parties agree on the transaction ordering and the ledger expands over time.
+
+\begin{definition}[Distributed Ledger]\label{def:secure-ledger}
+    Let $\proto$ be a protocol that is run by $\totalParties$ parties; $\proto$
+    implements a secure distributed ledger if the following properties are
+    satisfied:
+    \begin{itemize}
+        \item \emph{Safety}: If two honest parties output $[\tx_0, \dots,
+            \tx_j]$ and $[\tx_0', \dots, \tx_j']$ respectively, then $\forall i
+            \in [0, \min(j, j')]: \tx_i = \tx_i'$.
+        \item \emph{Liveness}: If a transaction $\tx$ is provided as input to
+            at least one honest party, eventually all honest parties output a
+            ledger containing $\tx$.
+    \end{itemize}
+\end{definition}

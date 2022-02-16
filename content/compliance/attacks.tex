@@ -1,0 +1,104 @@
+\subsection{Attacks and Market Response}\label{sec:attacks}
+
+To estimate the exchange rate's behavior vis-à-vis external infraction rewards,
+we turn to historical data from the cryptocurrency market. Although no
+infractions of the type considered in this work have been observed in
+deployed PoS systems, we extrapolate data from similar attacks against PoW
+cryptocurrencies (Table~\ref{tab:attacks}).
+
+In the considered attacks, the perpetrator $\adversary$ performed double
+spending. Specifically, $\adversary$ created a fork and two conflicting
+transactions, each of which is published on the two chains of the fork, the
+main and the adversarial chain. The main chain's transaction is redeemed for
+external rewards, \eg a payment in USD, while the adversarial chain's
+transaction simply transfers the assets between two accounts of $\adversary$.
+Therefore, $\adversary$ both receives external rewards and retains its
+cryptocurrency rewards.
+
+The adversarial chain contains a number of blocks created by $\adversary$.
+After this chain becomes longest and is adopted by the network,
+$\adversary$ sells its block rewards for USD.  To evaluate the exchange rate at
+this point, we set the period between the launch of the attack and the
+(presumable) selling of the block rewards to $5$ days. This value depends on
+various parameters. For instance, in Bitcoin, the rewards for a block $\block$
+can be redeemed after a ``coinbase maturity'' period of $100$ confirmations,
+\ie after at least $100$ blocks have been mined on top of $\block$ (equiv. $17$
+hours).\footnote{A Bitcoin
+block is created on expectation every $10$ minutes.}
+Furthermore, transactions are typically not finalized immediately; for
+instance, most parties finalize a Bitcoin transaction after $6$ confirmations
+and an Ethereum transaction after $240$ confirmations (equiv. approximately $1$
+hour).
+Usually this restraint is tightened~\cite{etc-attack-4} after an
+attack is revealed.
+
+To estimate the difference in rewards that an infraction effects, we use
+cryptocurrency prices from
+CoinMarketCap\footnote{\url{https://coinmarketcap.com/}}. First, we obtain the
+price $P_{C}$ of each cryptocurrency $C$ $5$ days after the attack. Second, we
+compute the percentage difference $p_{BTC}$ of Bitcoin's price, between the end
+and the beginning of the $5$ day period. The value $P_{C} \cdot p_{BTC}$
+expresses the \emph{expected} price of the cryptocurrency, assuming no attack
+had occurred.\footnote{Historically, the prices of Bitcoin and alternative
+cryptocurrencies are strongly correlated~\cite{btc-price-correlation}.} Next,
+we find the number of blocks $b$ created during the attack and the reward
+$\reward$ per block. Therefore, the reward difference is computed as $P_{C}
+\cdot p_{BTC} \cdot b \cdot \reward$.
+
+As shown in~\cite{CCS:GazKiaRus20,CCS:DKTTVWZ20}, this attack is
+optimal. Therefore, using the computations in~\cite{nakamoto2008bitcoin} and
+the reorganized blocks during each attack, we approximate the
+necessary percentage of adversarial power to successfully mount the attack with
+at least $0.5$ probability.
+
+\begin{table}[ht]
+    \centering \def\arraystretch{1.5}
+
+    \begin{center}
+      \footnotesize
+        \begin{tabular}{|c|c|c|c|c|c|}
+            \hline
+
+              System
+            & Date
+            & \begin{tabular}[c]{@{}c@{}} External \\ Utility \end{tabular}
+            & \begin{tabular}[c]{@{}c@{}} Rewards \end{tabular}
+            & \begin{tabular}[c]{@{}c@{}} Reward \\ Difference \end{tabular}
+            & \begin{tabular}[c]{@{}c@{}} Attacker \\ Hash Rate \% \end{tabular} \\
+            \hline
+
+            \multirow{4}{*}{\begin{tabular}[c]{@{}c@{}} Ethereum \\ Classic \end{tabular}}   & 5/1/19 \cite{etc-attack-2}        & \$$1.1$M     & \$$12.410$       & \$$-2,646$       & $0.48026$  \\
+                                                                                             & 1/8/20 \cite{etc-attack}          & \$$5.6$M     & \$$84,059$      & \$$-11,806$     & $0.4913$  \\
+                                                                                             & 6/8/20 \cite{etc-attack-3}        & \$$1.68$M    & \$$91,715$      & \$$-5,761$      & $0.4913$  \\
+                                                                                             & 30/8/20 \cite{etc-attack-4}       & unknown      & \$$120,131$      & \$$-12,992$      & $0.5$  \\
+            \hline
+
+            Horizen                             & 8/6/18 \cite{zencash-attack}      & \$$550,000$   & \$$5,756$      & \$$-752$  & $0.461373$ \\
+            \hline
+
+            \multirow{1}{*}{Vertcoin}           & 2/12/18 \cite{vertcoin-attack}     & \$$100,000$   & \$$3,978$       & \$$-879$  & $0.487124$ \\
+            \hline
+
+            \multirow{2}{*}{\begin{tabular}[c]{@{}c@{}} Bitcoin \\ Gold \end{tabular}}       & 16/5/18 \cite{btg-attack-2}       & \$$17.5$M     & \$$11,447$     & \$$-1,404$    & $0.441631$ \\
+                                                & 23/1/20 \cite{btg-attack}         & \$$72,000$    & \$$4,247$      & \$$814$   & $0.43991$ \\
+            \hline
+
+            Feathercoin                         & 1/6/13 \cite{ftc-attack}         & \$$63,800$    & \$$1,203$      & \$$-95.73$   & $0.48283$ \\
+            \hline
+
+            \begin{tabular}[c]{@{}c@{}} Litecoin \\ Cash \end{tabular}                       & 4/7/19 \cite{lcc-attack}          & \$$5,511$     & \$$80.66$         & \$$-0.15$    & $0.47167$ \\
+            \hline
+
+        \end{tabular}
+      \normalsize
+    \end{center}
+    \caption{
+        Double spending attacks and the market's response to them.
+        External utility is estimated as the reward from double-spent
+        transactions. To compute the reward difference, we multiply the rewards
+        from reorganized blocks with the exchange rate difference, \ie the
+        asset's price $5$ days after the attack minus the expected price, if an
+        attack had not occurred (following Bitcoin's price in the same period).
+    }
+    \label{tab:attacks}
+\end{table}

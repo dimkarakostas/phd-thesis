@@ -1,0 +1,18 @@
+\paragraph{Related Work}
+In cryptographic literature, pools are mostly treated from an engineering
+perspective. In PoW systems, SmartPool~\cite{USENIX:LVTS17} is a notable design
+of a distributed mining pool for Ethereum, which, similar to our work, utilizes
+smart contracts for reward distribution.  On the PoS domain,
+Ouroboros~\cite{C:KRDO17} offers a brief description of how delegation can be
+used within the protocol. This idea is expanded in~\cite{SCN:KarKiaLar20},
+which provides a formal definition of PoS wallets and includes stake pool
+formation method via certificates. However, the pool's management is again
+centralized around the operator; our work extends this line of work by enabling
+the formation of a collective pool. Another work, orthogonal to ours, by
+Br{\"{u}}njes \etal~\cite{DBLP:conf/eurosp/BrunjesKKS20} considers the
+incentives of distributing rewards among stake pools and aims to incentivize
+the creation of a (pre-defined) number of pools. However, it assumes that the
+pool operator commits part of their stake to make the pool more appealing, thus
+favoring larger pool operators. Our work eases such wealth concentration
+tendencies by enabling a collective pool to be equally competitive to a
+centralized one.

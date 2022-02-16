@@ -1,0 +1,36 @@
+\paragraph{\bf Part 1: Stake Pool Management.}
+The pool's management (Figure~\ref{fig:Fpool-1}) includes all operations that
+are not consensus-oriented.  First, establishing a stake pool consists of two
+parts, defined as corresponding interfaces in the ideal functionality. The
+pool's members \emph{gather} and jointly decide to create a staking pool; they
+contact each other, \eg via off-chain channels, agree on the pool's parameters,
+and generate its key.  Importantly, the participants are aware of the total
+number of participants in the pool, as well as their weights. Then, The pool's
+members perform a setup protocol and \emph{register} the new pool via a
+\emph{registration certificate}, which is signed by the pool's key and
+published on the ledger.
+% We highlight that each party needs to delegate its stake to the newly created
+% pool prior to the establishing of the pool, \ie before it can participate in
+% the consensus protocol.\dimitris{is this needed?}
+Following, the pool receives rewards for participating in the consensus
+protocol. The rewards are managed by a smart contract and, at any point, each
+each party can withdraw their part, which is proportional to the internal stake
+distribution. Finally, to close the pool, the members sign and publish a
+revocation certificate.
+
+\paragraph{\bf Part 2: Participation in Consensus.}
+Following registration, participation in the system (Figure~\ref{fig:Fpool-2})
+consists of \emph{validating transactions} and \emph{issuing blocks}. To
+improve performance, we define a subselection mechanism, which elects a subset
+of parties to verify each transaction and (potentially) add it to the
+distributed mempool. At any point, all (honest) pool members keep the same view
+of the distributed mempool and, when the pool is elected to participate in
+consensus, its members locally construct the new block, collectively sign it,
+and publish it.
+
+%$\Fpool$ is compatible with the framework of~\cite{SCN:KarKiaLar20}, \ie it
+%generates the registration and revocation certificates $\cert_{reg}$ and
+%$\cert_{rev}$. The validity of $\cert_{reg}$ requires that, to join the pool,
+%each party $\p_{i}$ publishes an individual delegation certificate to the
+%(joint) stake pool public key $\threshpubkey_{pool}$, prior to the generation
+%of the registration certificate $\cert_{reg}$.\dimitris{is this necessary?}

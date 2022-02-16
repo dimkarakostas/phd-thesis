@@ -1,0 +1,24 @@
+\paragraph{Related work}
+The macro and microeconomics of blockchain design have been studied from
+several perspectives, but remain an active area of research with a number of
+open questions. \emph{Egalitarianism} in particular has been studied in PoW
+systems from the perspective of \emph{memory-hard
+functions}~\cite{EC:AlwBloPie17,USENIX:BirKho16}. These works operate under the
+premise that memory hardness provides egalitarianism, in the sense that the
+cost of one computational step is roughly the same irrespective of the
+underlying computational platform (typically ASIC vs. generic). In this chapter
+we generalize this question, by asking whether computational power grows
+proportionally to capital invested, \ie whether larger wealth results
+disproportionately more rewards. Additionally, a notable work by Fanti
+\etal~\cite{FC:FKORVW19} introduces the complementary notion of
+\emph{equitability}.  That work studies the evolution of a system after a
+series of rounds, putting forth the property that stake ownership remains in
+proportion \emph{before} and \emph{after} rewards have been awarded. By
+studying the behavior of the returns' \emph{variance} under the randomness of
+executions, they show that the distribution of capital follows a Pólya process.
+This chapter can be seen as complementary to their results, by quantifying the
+\emph{expectation} of rewards and then studying the variance under the
+randomness of initial capital allocation. Therefore, a cryptocurrency can be
+perfectly egalitarian and poorly equitable and vice versa; notably, it is
+possible to obtain a cryptocurrency both egalitarian and equitable, by adopting
+correctly parameterized PoS under a geometric reward function.

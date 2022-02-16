@@ -1,0 +1,34 @@
+\paragraph{Contributions}
+Our work investigates techniques that minimize the shared state of the
+distributed ledger, \ie the in-memory UTxO set. Our approach is twofold:
+\begin{inparaenum}[a)]
+    \item we propose transaction optimization techniques which, when employed
+        by wallets, help reduce the shared state's cost;
+    \item propose a novel fee scheme that incentivizes ``shared
+        state-friendly'' transactions.
+\end{inparaenum}
+
+In particular, we propose a UTxO model, which abstracts UTxO ledgers and
+enables evaluating the cost of a ledger’s shared state. We then
+propose a transaction optimization framework, based on three levels of
+optimization:
+\begin{inparaenum}[a)]
+    \item a declarative (rule-based) level,
+    \item a logical/algebraic (cost-based) level, and
+    \item a physical/algorithmic (cost-based) level.
+\end{inparaenum}
+Following, we propose three transaction optimization techniques based on the
+aforementioned optimization levels:
+\begin{inparaenum}[a)]
+    \item a rule-driven optimal total order of transactions (the
+        \emph{last-payer rule}),
+    \item a logical transaction transformation (the \emph{2-for-1
+        transformation}), and
+    \item a novel \emph{input selection} algorithm that minimizes the UTxO set
+        increase, \ie favors consumption over creation of UTxOs.
+\end{inparaenum}
+We then define the transaction optimization problem and propose a 3-step
+dynamic programming algorithm to approximate the optimal solution.  Finally, we
+define the state efficiency property that a fee function should have, in order
+to correctly reflect a transaction's shared-state cost, and propose a state
+efficient fee function for Bitcoin.

@@ -1,0 +1,98 @@
+\subsection{Tax Auditable Distributed Ledger}\label{sec:taxchain}
+
+In this section we describe a ledger with a built-in tax auditing mechanism.
+Our design is generic, such that existing ledgers can incorporate it with
+minimal changes in the underlying consensus protocol. An \emph{auditable
+ledger} enforces a user $\user$ to declare the amount of assets they own to a
+taxation authority $\taxAuth$, with failure to do so rendering the assets
+unusable. We achieve this while leaking to $\taxAuth$ only the total amount of
+assets that $\user$ owns at a specific point in time, \eg the end of a fiscal
+year. We note that we consider only pseudonymous ledgers, so potentially
+de-anonymizable data may be published on the ledger, \eg addresses which may be
+linked to the user who controls them.
+
+We assume that $\taxAuth$ holds a list of all taxpayers and is identified by a
+key $(\privkey_{\taxAuth}, \pubkey_{\taxAuth})$. Also there exist taxation
+periods, which last for a pre-specified amount of time $d$. For example, a
+taxation period may last $1$ calendar year, at the end of which taxpayers need
+to declare their assets to the authorities.
+
+The core idea is that assets unaccounted for, at the end of the taxation
+period, are frozen, until their owners declare them to the authority.
+Specifically, at the end of a taxation period, all assets are frozen. To
+unfreeze an asset, a taxpayer $\user$ declares it to $\taxAuth$ as follows.
+
+First, $\user$ creates a new key pair $(\privkey_{\user}, \pubkey_{\user})$
+and the corresponding address $\addr_{\user}$ and sends $\addr_{\user}$
+to $\taxAuth$ as part of a KYC process.  Next, $\taxAuth$ certifies $\addr_{\user}$ by issuing the
+signature $\sig = \algosign(\addr_{\user}, \privkey_{\taxAuth})$, which it
+gives to $\user$. The tuple $\addr_{\user}^{t} = \langle \addr_{\user},
+\sig \rangle$ is the \emph{certified address}, which is used by the user to
+transact with frozen assets. $\taxAuth$ maintains a mapping of taxpayers and
+certified addresses, \ie for every taxpayer $\user$ it holds a list $A_{\user}$
+of all certified taxation addresses that $\user$ requested.
+
+A transaction $\tau = \langle \addr_{s}, \addr_{d}, \assets \rangle$,
+which moves $\assets$ frozen assets from an address $\addr_{s}$, is valid
+only if $\addr_{d} = \langle \addr, \sig \rangle \land
+\algoverify(\addr, \sig, \pubkey_{\taxAuth}) = 1$. Consequently, miners
+accept transactions that unfreeze assets only as long as said assets are
+transferred to a certified address. Therefore, $\taxAuth$ can compute the
+amount of $\user$'s assets as $\assets_{\user} := \sum_{i=1}^{n}
+\balance(\addr_{\user}[i])$, $n$ being the total number of $\user$'s
+certified addresses.
+
+We note that the system can accommodate multiple taxation authorities from
+different countries. In that case, $\taxAuth$ is a federation of authorities,
+each identified by a single key. Each authority's key is published on the
+ledger and a taxpayer can certify their addresses and declare their assets to
+the respective authorities.
+
+Naturally, this mechanism introduces some challenges. Although standard
+pay-to-public-key-hash addresses are $25$ bytes, certified addresses may be
+significantly larger, due to the certification signature of $\taxAuth$. For
+instance, ECDSA signatures in the DER format result in $72$ additional bytes,
+thus making certified addresses $99$ bytes long. Nevertheless, certified
+addresses are expected to be used only once, to declare the assets, thus the
+overall storage cost should not be significant. Another important consideration
+regards to the private state of the taxation authority; given the statute of
+limitations, $\taxAuth$ might need to maintain its taxation private key and the
+mapping of certified addresses for a significant period,
+possibly resulting in significant maintenance costs.
+
+We showcase our design via an auditable variation of Bitcoin ledger, denoted as
+$\taxBtc$. $\taxBtc$ is initially parameterized by the public key of the
+authority $(\privkey_{\taxAuth}, \pubkey_{\taxAuth})$, which is
+part of the ledger's genesis block. During the execution, $\taxAuth$ can update
+its key by simply signing a new key $\pubkey_{\taxAuth}'$ with
+$\privkey_{\taxAuth}$ and publishing it on the ledger. A taxation period lasts
+$52560$ blocks, \ie roughly $1$ calendar year, so block $52560$ and its
+multiples are ``tax-auditing'' blocks.  When a tax-auditing block is issued,
+all assets on $\taxBtc$ which are controlled by non-certified addresses are
+frozen. To transact with assets from a frozen address, a user sends them to a
+certified address, as described above.
+
+Freezing complicates the system in a number of ways. First, the liveness
+of a transaction~\cite{EC:GarKiaLeo15} may be affected. For
+instance, a transaction which spends from a non-certified address will be
+rejected, if it is created before but published after a tax-auditing block. We
+sidestep this issue by enabling users to use certified addresses before the
+freezing period, hence the liveness guarantees of the ledger apply
+unconditionally on certified addresses. Second, it is possible that multiple
+competing tax-auditing blocks are created, \eg multiple blocks which extend the
+tax-auditing block. Therefore, $\taxAuth$ needs to pick one and certify it.
+Afterwards, this certified block cannot be reverted and acts as a
+``checkpoint''.
+
+We note that $\taxBtc$ covers the desiderata proposed in
+Section~\ref{sec:taxation-desiderata}. Regarding privacy, although $\taxAuth$ can
+de-anonymize the set of $\taxBtc$ users at a specific point in time, \ie when
+the assets freeze, the users can employ standard Bitcoin addresses and
+transactions outwith this period. Additionally, as with standard Bitcoin
+addresses, third parties cannot obtain information regarding the identity of a
+certified address's owner (as long as the signature itself does not leak it).
+In terms of performance, a user can transact with their assets effortlessly, as
+long as they use certified addresses to receive or unfreeze assets around the
+taxation period. Importantly, users can certify their addresses ahead
+of the freezing time, thus the additional load can be spread over a period
+of a few days or weeks.

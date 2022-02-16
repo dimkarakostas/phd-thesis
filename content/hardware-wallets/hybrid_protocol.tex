@@ -1,0 +1,175 @@
+\section{The Real-World Hybrid Setting}\label{sec:hybrid-protocol}
+
+The hybrid setting, which realizes the ideal functionality, consists of the
+human $\ph$, client $\pclient$, and hardware $\Fhw$ protocols, each defining
+the set of operations run by the corresponding parties.
+
+\paragraph{Human Protocol}\label{subsec:human-protocol}
+The user $\user$ interacts with $\client$, $\hardware$, and $\env$, and runs
+the protocol $\ph$ (Figure~\ref{fig:PHuman}), which defines
+the following, initially empty, items:
+\begin{inparaenum}[i)]
+    \item $T$: a list of transactions $\tx = (\addr_r, \asset_\msf{pay}, \asset_\msf{fee})$;
+    \item $S$: a list of client sessions $\sid$.
+\end{inparaenum}
+Under the model, a session is initialized when $\user$ connects the hardware
+module to the client. $\user$ assigns a random pass phrase $\clId$ to each
+client, which is chosen upon session initialization. $\user$ keeps track of the
+initiated sessions and pending transactions. However, $\user$ does not perform
+complex computations, such as verifying a signature, or maintain a large state,
+like the entire list of generated addresses. Instead, $\user$ has a memory $T$,
+which contains only the pending transactions, and also is capable of performing
+simple computations (like addition/subtraction) and equality checks between
+strings.
+
+\myhalfbox{Protocol $\ph$}{white!40}{white!10}{
+    \noindent\emph{Setup:}
+        Upon receiving $\msg{Setup}{}$ from $\env$, forward it to $\hardware$,
+        and initialize $T$ to empty. Then, upon receiving $\msg{SetupOK}{}$ from
+        $\hardware$, forward it to $\env$.
+
+    \noindent\emph{Initialize Client Session:}
+        Upon receiving $\msg{InitSession}{}$ from $\env$, pick $\clId
+        \xleftarrow{\$} \{0, 1\}^\secparam$ and send $\msg{InitSession}{\clId}$
+        to $\client$. Upon receiving $\msg{InitSession}{\clId'}$ from
+        $\hardware$, if $\clId' = \clId$, add $\clId$ to $S$ and send
+        $\msg{Session}{\clId'}$ to $\hardware$ and $\env$.
+
+    \noindent\emph{Generate Address:}
+        Upon receiving $\msg{GenAddr}{}$ from $\env$, forward it to $\client$
+        and wait for two messages, $\msg{Address}{\addr_{client}}$ from
+        $\client$ and $\msg{Address}{\addr_{hw}}$ from $\hardware$.  If
+        $\addr_{client} = \addr_{hw}$, send $\msg{Address}{\addr_{hw}}$ to
+        $\env$.
+
+    \noindent\emph{Calculate Balance:}
+        Upon receiving $\msg{GetBalance}{}$ from $\env$, forward it to
+        $\client$. Then, upon receiving $\msg{Balance}{b}$ from $\client$,
+        forward it to $\env$.
+
+    \noindent\emph{Issue Transaction:}
+        Upon receiving $\msg{IssueTX}{\tx}$ from $\env$, such that $\tx =
+        (\addr_r, \asset_\msf{pay}, \asset_\msf{fee})$, add $\tx$ to $T$ and forward
+        the message to $\client$. Upon receiving $\msg{CheckTx}{\clId, \tx',
+        b'}$ from $\hardware$, if $\clId \in S$, $\tx' \in T$ and
+        $b' = b - \asset_\msf{pay} - \asset_\msf{fee}$, remove
+        $\tx'$ from $T$ and send $\msg{IssueTx}{\clId, \tx}$ to $\hardware$.
+}{\label{fig:PHuman} The ``human'' protocol run by $\user$.}
+
+\paragraph{Client Protocol} \label{subsec:client-protocol}
+The client $\client$ interacts with $\user$, the hardware wallet $\hardware$,
+and the environment $\env$. The protocol $\pclient$ (Figure~\ref{fig:Pclient})
+defines the following items:
+\begin{inparaenum}[i)]
+    \item $\masterpubkey$: the master public key of the wallet;
+    \item $i$: the key derivation index;
+    \item $\clId$: the pass phrase assigned by $\user$;
+    \item $A_{client}$: a list of the account's addresses;
+    \item $T_{utxo}$: a list of address balances.
+\end{inparaenum}
+$\client$ acts a proxy between $\user$ and $\hardware$, providing connectivity
+to the ledger and executing blockchain-related operations, such as computing
+the account's balance. During the address generation, $\client$ retrieves the
+public key from $\hardware$; in practice this is optional, as $\client$ can
+generate an address independently, via the derivation process of the
+hierarchical deterministic wallets.
+
+\myhalfbox{Protocol $\pclient$}{white!40}{white!10}{
+    \noindent\emph{Initialize Client Session:}
+        Upon receiving $\msg{InitSession}{p}$ from $\user$, forward it to
+        $\hardware$; upon receiving $\msg{MasterPubKey}{k}$ from
+        $\hardware$, set $\clId = p$, $\masterpubkey = k$ and $i = 1$.
+
+    \noindent\emph{Generate Address:}
+        Upon receiving $\msg{GenAddr}{}$ from $\user$, forward it to
+        $\hardware$. Then, upon receiving $\msg{PubKey}{\pubkey_i}$ from
+        $\hardware$, compute $\addr_i = \hash(\pubkey_i)$, set $i = i + 1$, and
+        add $\addr_i$ to $A_{client}$. Finally, send $\msg{Address}{\addr_i}$
+        to $\user$.
+
+    \noindent\emph{Calculate Balance:}
+        Upon receiving $\msg{GetBalance}{}$ from $\user$, send $\msg{Read}{}$
+        to $\Gledg$. Upon receiving $\msg{Read}{\chain}$ from $\Gledg$,
+        set $T_{utxo}$ to the empty list and
+        $\forall \tx \in \chain$, \ie the ordered transactions in the
+        ledger \st $\tx = (\addr_s, \addr_r, \asset_\msf{pay}, \addr_c,
+        \asset_\msf{change})$, do:
+        \begin{itemize}
+            \item If $\addr_s \in A_{client}$, update the entry
+                $(\addr_s, \asset_\msf{past})\in T_{utxo}$ to $(\addr_s, 0)$;
+            \item If $\addr_r \in A_{client}$, update
+                $(\addr_r, \asset_\msf{past})\in T_{utxo}$ to $(\addr_r,
+                \asset_\msf{past} + \asset_\msf{pay})$;
+            \item If $\addr_c \in A_{client}$, update
+                $(\addr_c, \asset_\msf{past})\in T_{utxo}$ to $(\addr_c,
+                \asset_\msf{past} + \asset_\msf{change})$.
+        \end{itemize}
+        Finally, compute $b = \sum_{(\cdot, \asset) \in T_{utxo}} \asset$ and
+        send $\msg{Balance}{b}$ to $\user$.
+
+    \noindent\emph{Issue Transaction:}
+        Upon receiving $\msg{IssueTX}{\tx}$ from $\user$, such that $\tx =
+        (\addr_r, \asset_\msf{pay}, \asset_\msf{fee})$, send $\msg{SignTx}{\clId, \tx,
+        T_{utxo}}$ to $\hardware$. Upon receiving $\msg{ChangeIndex}{idx}$, set
+        $i = idx$ and compute and store the change address and its public key,
+        as in the \emph{Generate Address} interface. Then, upon receiving
+        $\msg{SignTx}{\tx_{\sig}}$ from $\hardware$, send
+        $\msg{Submit}{\tx_{\sig}}$ to $\Gledg$.
+}{\label{fig:Pclient} The client protocol run by $\client$.}
+
+\paragraph{Hardware Wallet Protocol}\label{subsec:hardware-protocol}
+The hardware $\hardware$ interacts with $\client$ and $\user$ and runs the
+protocol $\Fhw$ (Figure~\ref{fig:hardware_protocol}), which defines the
+following items:
+\begin{inparaenum}[i)]
+    \item $i$: the key derivation index,
+    \item $S$: a list of the active client sessions,
+    \item $\masterkeypair$: the master key pair of the wallet, and
+    \item $A$: a list that contains tuples like $(i, \addr_i, \privkey_i,
+        \pubkey_i)$, where $i$ is a key derivation index and $\addr_i,
+        (\privkey_i, \pubkey_i)$ a generated address and its corresponding key.
+\end{inparaenum}
+$\hardware$ can perform some specific complex computations, such as hashing or
+signature issuing, has limited memory, and completely lacks network connectivity.
+
+\myhalfbox{Protocol $\Fhw$}{white!40}{white!10}{
+    \noindent\emph{Setup:}
+        Upon receiving $\msg{Setup}{}$ from $\user$, initialize $S$ and $A$ to
+        empty lists. Then compute $\masterkeypair \leftarrow
+        \algokeygen(1^\secparam)$, set $i = 1$, and return
+        $\msg{Setup}{\masterprivkey}$ to $\user$.
+
+    \noindent\emph{Initialize Client Session:}
+        Upon receiving $\msg{InitSession}{\clId}$ from $\client$, forward it to
+        $\user$. Upon receiving $\msg{Session}{\clId'}$ from $\user$, add
+        $\clId'$ to $S$ and send $\msg{MasterPubKey}{\masterpubkey}$ to
+        $\client$.
+
+    \noindent\emph{Generate Address:}
+        Upon receiving $\msg{GenAddr}{}$ from $\client$, compute $(\privkey_i,
+        \pubkey_i) = \msf{HierarchicalKeyGen}(\masterprivkey, i)$ and $\addr_i
+        = \hash(\pubkey_i)$. Then, store $(i, \addr_i, \privkey_i, \pubkey_i)$
+        to $A$, set $i = i + 1$, and return $\msg{Address}{\addr_i}$ to $\user$
+        and $\msg{PubKey}{\pubkey_i}$ to $\client$.
+
+    \noindent\emph{Issue Transaction:}
+        Upon receiving $\msg{SignTx}{\clId, \tx, T_{utxo}}$ from $\client$,
+        where $\tx = (\addr_r, \asset_\msf{pay}, \asset_\msf{fee})$, find an entry
+        $(\addr_{in}, \asset_\msf{in}) \in T_{utxo}: \asset_\msf{in} \geq
+        \asset_\msf{pay} + \asset_\msf{fee}$. If such entry exists, then:
+        \begin{inparaenum}[i)]
+            \item find $(\cdot, \addr_{in}, \privkey_{in}, \pubkey_{in}) \in A$;
+            \item compute $\asset_\msf{change} = \asset_\msf{in} -
+                \asset_\msf{pay} - \asset_\msf{fee}$;
+            \item create an address $\addr_c$, as in the \emph{Generate
+                Address} interface;
+            \item compute $b = \sum_{(\cdot, \asset) \in T_{utxo}} \asset$ and
+                set $b' = b - \asset_\msf{pay} - \asset_\msf{fee}$.
+        \end{inparaenum}
+        Then, send $\msg{ChangeIndex}{i}$ to $\client$ and $\msg{CheckTx}{\clId,
+        \tx', \msf{balance}'}$ to $\user$, where $\tx' = (\addr_r,
+        \asset_\msf{pay}, \asset_\msf{fee}')$. Upon receiving $\msg{IssueTx}{\clId,
+        \tx}$ from $\user$, set $\tx = (\addr_{in}, \addr_r, \asset_\msf{pay},
+        \addr_c, \asset_\msf{change})$, compute $\tx_{\sig} = (\tx, \pubkey_{in},
+        \algosign(\tx, \privkey_{in}))$ and send $\msg{SignTx}{\tx_{\sig}}$ to $\client$.
+}{\label{fig:hardware_protocol} The hardware protocol run by $\hardware$.}

@@ -1,0 +1,69 @@
+\documentclass[phd,lfcs,fullspacing,logo,normalheadings]{infthesis}
+
+\input{packages}
+
+\usepackage[math-style=TeX,bold-style=TeX]{unicode-math}
+\setmainfont{Gill-Sans-MT}[
+    Path = font/,
+    UprightFont = *-Book,
+    ItalicFont = *-Book-Italic,
+    BoldFont = *-Bold,
+    BoldItalicFont = *-Bold-Italic,
+    Extension = .ttf
+]
+
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph*{#1.}}
+
+\newcommand{\chapternote}[1]{
+    \begin{quote}
+    \itshape #1
+    \end{quote}
+    \bigskip
+}
+
+\newcommand\blankpage{
+    \null
+    \thispagestyle{empty}
+    \addtocounter{page}{-1}
+    \newpage
+}
+
+\title{
+    Digital Asset Management \\ via \\ Distributed Ledgers
+}
+\author{
+    Dimitris Karakostas
+}
+\submityear{2021}
+
+\input{macros}
+
+\begin{document}
+
+\begin{preliminary}
+    \maketitle
+    \input{content/dedication}\clearpage
+    \input{content/abstract}
+    \input{content/acknowledgements}
+    \input{content/copyright}
+    \input{content/declaration}
+    \input{content/lay_summary}
+    \tableofcontents
+    \afterpage{\blankpage}
+\end{preliminary}
+
+\input{content/introduction/main}
+\input{content/preliminaries/main}
+\input{content/hardware-wallets/main}
+\input{content/delegation/main}
+\input{content/collective-pools/main}
+\input{content/utxo-growth/main}
+\input{content/compliance/main}
+\input{content/macroeconomics/main}
+\input{content/conclusion/main}
+
+\bibliographystyle{alphaurl}
+\bibliography{bibliography/additional,bibliography/cryptobib/abbrev0,bibliography/cryptobib/crypto_crossref}
+
+\end{document}

@@ -1,0 +1,490 @@
+\newcommand{\mc}{\mathcal}
+\newcommand{\msf}{\mathsf}
+\newcommand{\mbb}{\mathbb}
+\newcommand{\defn}{\stackrel{\textrm{\scriptsize def}}{=}}
+
+%%% TEXT
+\newcommand{\eg}{e.g., }
+\newcommand{\ie}{i.e., }
+\newcommand{\wrt}{w.r.t. }
+\newcommand{\st}{s.t. }
+\newcommand{\etc}{\textit{etc.} }
+\newcommand{\etal}{\textit{et al.}}
+
+%%% PARAMETERS
+\newcommand{\secparam}{\kappa}
+\newcommand{\persistenceParam}{k}
+\newcommand{\livenessParam}{u}
+
+%%% PARTIES
+\newcommand{\adversary}{\mc{A}}
+\newcommand{\simulator}{\mc{S}}
+\newcommand{\Iadv}{\simulator}
+\newcommand{\party}{\mc{P}}
+\newcommand{\partyset}{\mbb{P}}
+\newcommand{\env}{\mc{Z}}
+
+%%% PRIMITIVES
+\newcommand{\hash}{\msf{H}}
+\newcommand{\sigscheme}{\Sigma}
+\newcommand{\eufcma}{\ensuremath{\textsf{EUF-CMA}}}
+\newcommand{\algokeygen}{\msf{KeyGen}}
+\newcommand{\algoverify}{\msf{Verify} }
+\newcommand{\algover}{\msf{Verify} }
+\newcommand{\algosign}{\msf{Sign}}
+\newcommand{\pubkey}{\msf{vk}}
+\newcommand{\privkey}{\msf{sk}}
+\newcommand{\keypair}{(\pubkey, \privkey)}
+\newcommand{\signature}{\sigma}
+\newcommand{\sig}{\signature}
+
+%%% BLOCKCHAIN OBJECTS
+\newcommand{\ledger}{\mc{L}}
+\newcommand{\chain}{\mc{C}}
+\newcommand{\block}{\mc{B}}
+\newcommand{\transaction}{\tau}
+\newcommand{\tx}{\transaction}
+\newcommand{\txSet}{\mbb{T}}
+\newcommand{\utxo}{\msf{UTxO}}
+\newcommand{\inp}{\msf{Input}}
+\newcommand{\addr}{\alpha}
+\newcommand{\addrlen}{\ell}
+
+\newcommand{\head}{\msf{head}}
+
+\newcommand{\algovalidate}{\msf{Validate}}
+
+\newcommand{\keyset}{\mbb{K}}
+\newcommand{\masterpubkey}{\msf{mvk}}
+\newcommand{\masterprivkey}{\msf{msk}}
+\newcommand{\masterkeypair}{(\masterpubkey, \masterprivkey)}
+
+
+%%% UC
+\newcommand{\func}{\mc{F}}
+\newcommand{\protocol}{\pi}
+\newcommand{\globalfunc}{\mc{G}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% HARDWARE WALLETS
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\user}{\mc{U}}
+\newcommand{\client}{\mc{D}}
+\newcommand{\hardware}{\mc{H}}
+
+\newcommand{\msg}[2]{
+    \ifthenelse{\isempty{#1}}{\ensuremath{(\msf{sid}, #2)}}{
+        \ifthenelse{\isempty{#2}}{\ensuremath{(\textsc{#1}, \msf{sid})}}{
+            \ensuremath{(\textsc{#1}, \msf{sid}, #2)}
+        }
+    }
+}
+
+\newcommand{\clId}{\msf{pass}_{\client}}
+
+\newcommand{\Fw}{\func_{\mathrm{w}}}
+\newcommand{\Fsig}{\func_\msf{SIG}}
+\newcommand{\Gledg}{\globalfunc_\msf{LEDGER}}
+\newcommand{\Goracle}{\globalfunc_\msf{RO}}
+\newcommand{\pclient}{\protocol_{client}}
+\newcommand{\ph}{\protocol_{human}}
+\newcommand{\pw}{\protocol_{w}}
+\newcommand{\Fhw}{\protocol_{hw}}
+\newcommand{\phybrid}{\protocol_{hybrid}}
+
+\newcommand{\Hprob}{R_{h}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% UTXO GROWTH
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\utxoSize}{\omega}
+\newcommand{\txInputSize}{\iota}
+\newcommand{\sizeByteFee}{\beta}
+\newcommand{\utxoFee}{\psi}
+
+\newcommand{\utxoCost}{c}
+\newcommand{\feeFunction}{F}
+\newcommand{\costFunc}{\msf{costTx}}
+\newcommand{\stateCost}{C}
+
+\newcommand{\fee}{f}
+\newcommand{\ledgerState}{\mc{S}}
+\newcommand{\ledgerStateSet}{\mbb{S}}
+\newcommand{\txCostFeeRate}{r}
+
+\newcommand{\infixOperator}{\langle \tau \rangle}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% DELEGATION
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\cF{\func}
+
+\newcommand{\accPay}{\mc{I}_p}
+\newcommand{\accSta}{\mc{I}_s}
+\newcommand{\sid}{\msf{sid}}
+\newcommand{\asset}{\theta}
+\newcommand{\assetset}{\Theta}
+\newcommand{\addresset}{\mbb{A}}
+\newcommand{\addresslist}{l_{\addr}}
+\newcommand{\addresslistindexed}{l_{\addr}}
+\newcommand{\addressgenlist}{l_{\addr, Gen}}
+\newcommand{\addresstuple}{(\delta_1, \ldots, \delta_\addrgenlength )}
+\newcommand{\addresstupleprime}{(\delta^\prime_1, \ldots, \delta^\prime_\addrgenlength )}
+\newcommand{\attributedistribution}{\mc{L}}
+\newcommand{\attribute}{\delta}
+\newcommand{\attributeset}{\Delta}
+\newcommand{\addrgenlength}{g}
+\newcommand{\addrgendomain}{\attributeset_1 \times \ldots \times \attributeset_\addrgenlength}
+\newcommand{\paymentkeyverify}{\msf{vkp}}
+\newcommand{\paymentkeysign}{\msf{skp}}
+\newcommand{\paymentkeypair}{(\paymentkeyverify, \paymentkeysign)}
+\newcommand{\stakingkeyverify}{\msf{vks}}
+\newcommand{\stakingkeysign}{\msf{sks}}
+\newcommand{\stakingkeypair}{(\stakingkeyverify, \stakingkeysign)}
+\newcommand{\sign}{\sigma}
+
+\newcommand{\FuncW}{\cF_\mathrm{CoreWallet}}
+\newcommand{\ProtoW}{\protocol_\mathrm{CoreWallet}}
+\newcommand{\p}{\mc{P}}
+
+%Template for boxfigure
+\newenvironment{boxfig}[2]{% {#1}{#2} = {Figure Caption}{Box caption}{label}
+   \begin{figure}[ht!]
+     \newcommand{\FigCaption}{#1}
+     \newcommand{\FigLabel}{#2}
+     \begin{center}
+       \begin{small}
+       \setlist{nosep}
+         \begin{tabular}{@{}|@{~~}l@{~~}|@{}}
+           \hline
+           \rule[-1.5ex]{0pt}{1ex}\begin{minipage}[b]{0.96\linewidth}
+             \smallskip
+             }{%
+           \end{minipage}\\
+           \hline
+         \end{tabular}
+       \end{small}
+       \vspace{-0.3cm}
+       \caption{\FigCaption}
+       \label{\FigLabel}
+     \end{center}
+   \end{figure}
+}
+
+\def\bits{\{0,1\}}
+
+\newcommand{\keyverify}{\msf{vk}}
+\newcommand{\keysign}{\msf{sk}}
+\newcommand{\negl}{\mathsf{negl}}
+\newcommand{\algohierarchicalkeygen}{\msf{HKeyGen}}
+\newcommand{\algorecoverytaggen}{\msf{RTagGen}}
+
+\newcommand{\N}{{{\mbb N}}}
+
+\newcommand{\ideal}{{\msf{IDEAL}_{\Fuc, \Iadv, \env}}}
+\newcommand{\idealprimesim}{{\msf{IDEAL}_{\Fuc, \Iadv^\prime, \env}}}
+\newcommand{\idealwalletfunc}{{\msf{IDEAL}_{\FuncW, \Iadv, \env}}}
+
+\newcommand{\real}{{\msf{REAL}_{\protocol, \adv, \env}}}
+\newcommand{\realpiw}{{\msf{REAL}_{\piw, \adv, \env}}}
+
+\newcommand{\piw}{\protocol_{\wallet}}
+
+\newcommand{\enseideal}{{\{\msf{IDEAL}_{\Fuc, \Iadv, \env}(\secparam,z,r)\}_{\secparam \in \N, z \in \bits^{*}}}}
+\newcommand{\ensereal}{{\{\msf{REAL}_{\protocol, \adv, \env}(\secparam,z,r)\}_{\secparam \in \N,z \in \bits^{*}}}}
+
+\newcommand{\payTx}{\ensuremath{\tau_{p}\xspace}}
+\newcommand{\regTx}{\ensuremath{\tau_{register}\xspace}}
+\newcommand{\delegTx}{\ensuremath{\tau_{delegate}\xspace}}
+\newcommand{\stakeTx}{\ensuremath{\tau_{stake}\xspace}}
+
+\newcommand{\wallet}{\ensuremath{\mc{WC}\xspace}}
+
+\newcommand{\Fuc}{\ensuremath{\func\xspace}}
+\newcommand{\adv}{\mc{A}}
+\newcommand{\sind}{\approx_s}
+\newcommand{\cind}{\approx_c}
+
+\newcommand{\ignore}[1]{\relax}
+
+\newcommand{\cmark}{\large \color{OliveGreen} \ding{51}}
+\newcommand{\xmark}{\large \color{red} \ding{55}}
+
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+
+\algnewcommand\algorithmicassert{\texttt{assert}}
+\algnewcommand\Assert[1]{\State \algorithmicassert(#1)}
+
+\algnewcommand\algorithmicfinally{\textbf{finally}}
+\algnewcommand\Finally[1]{\State \algorithmicfinally #1}
+
+\algnewcommand\algorithmicswitch{\textbf{switch}}
+\algnewcommand\algorithmiccase{\textbf{case}}
+\algdef{SE}[SWITCH]{Switch}{EndSwitch}[1]{\algorithmicswitch\ #1\ \algorithmicdo}{\algorithmicend\ \algorithmicswitch}
+\algdef{SE}[CASE]{Case}{EndCase}[1]{\algorithmiccase\ #1}{\algorithmicend\ \algorithmiccase}
+\algtext*{EndSwitch}
+\algtext*{EndCase}
+
+\newcommand{\indexSet}{\mbb{I}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% COLLECTIVE POOLS
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\outs}{\rightarrow}
+\newcommand{\fail}{\bot}
+\newcommand{\rand}{r}
+\newcommand{\randompick}{\stackrel{\$}{\leftarrow}}
+\def\bits{\{0,1\}}
+
+\newcommand{\Z}{{{\mbb Z}}}
+\newcommand{\znn}{{\mbb{Z}_{N^2}}}
+\newcommand{\zntil}{{\mbb{Z}_{\widetilde{N}}}}
+
+\newcommand{\Ppool}{\protocol_{pool}}
+
+\newcommand{\globalmodel}{\overline{\globalfunc}}
+
+\newcommand{\Fpool}{{\func}_{pool}}
+\newcommand{\Fbroad}{{\func}_{BC}}
+\newcommand{\Fcore}{{\func}_{corewallet}}
+
+\newcommand{\Gledger}{{\globalmodel}_{simpleLedger}}
+
+\newcommand{\Pconsensus}{\protocol_{consensus}}
+
+\newcommand{\iadv}{\mc{S}}
+
+\newcommand{\hybmodel}{{\msf{HYBRID}_{\protocol^{\fauxmodel}, \adv, \env}}}
+\newcommand{\hyb}{{\msf{HYBRID}_{\protocol^{\script}, \adv, \env}}}
+\newcommand{\hybpool}{{\msf{HYBRID}^{pool}_{\Ppool, \adv, \env}}}
+
+\newcommand{\idealmodel}{{\msf{IDEAL}_{\func, \iadv, \env}}}
+
+\newcommand{\envinput}{z}
+
+\newcommand{\ensideal}{{\{\msf{IDEAL}_{\func, \iadv, \env}(\secparam,\envinput,\rand)\}_{\secparam \in \N, \envinput \in \bits^{*}}}}
+\newcommand{\enshyb}{{\{\msf{HYBRID}_{{\protocolauxmodel}, \adv, \env}(\secparam,\envinput,\rand)\}_{\secparam \in \N,\envinput \in \bits^{*}}}}
+
+\newcommand{\idealvar}{{\msf{IDEAL}_{\func, \iadv, \env}}}
+\newcommand{\hybvar}{{\msf{HYBRID}_{{\protocolauxmodel}, \adv, \env}}}
+
+\newcommand{\blockify}{\msf{blockify}}
+
+\newcommand{\contractstate}{\Omega}
+
+\newcommand{\m}{\msf{m}}
+
+\newcommand{\parse}{\stackrel{p}{\leftarrow}}
+
+\newcommand{\digsign}{(\algokeygen,\algosign,\algover)}
+
+\newcommand{\parties}{\mc{P}}
+\newcommand{\totalParties}{n}
+\newcommand{\totalShares}{m}
+\newcommand{\adversarialParties}{t}
+\newcommand{\adversarialWeights}{t}
+
+\newcommand{\addEncScheme}{\mc{E}}
+\newcommand{\addModule}{N}
+\newcommand{\addEnc}{E}
+\newcommand{\addDec}{D}
+\newcommand{\addPK}{PK}
+\newcommand{\addPlus}{+_{\addEncScheme}}
+\newcommand{\addTimes}{\times_{\addEncScheme}}
+\newcommand{\addc}{c}
+
+\newcommand{\mybox}[5]{
+    \begin{figure*}[htpb]
+        \centering
+    \begin{tikzpicture}
+        \node[anchor=text,text width=2*\columnwidth-0.5cm, draw, rounded corners, line width=1pt, fill=#3, inner sep=5mm] (big) {\\#4};
+        \node[draw, rounded corners, line width=.5pt, fill=#2, anchor=west, xshift=5mm] (small) at (big.north west) {#1};
+    \end{tikzpicture}
+    \caption{#5}
+    \end{figure*}
+}
+
+\newcommand{\myhalfbox}[5]{
+    \begin{figure}[htpb]
+        \centering
+    \begin{tikzpicture}
+        \node[anchor=text,text width=\columnwidth-1.2cm, draw, rounded corners, line width=1pt, fill=#3, inner sep=5mm, align=justify] (big) {\\#4};
+        \node[draw, rounded corners, line width=.5pt, fill=#2, anchor=west, xshift=5mm] (small) at (big.north west) {#1};
+    \end{tikzpicture}
+    \caption{#5}
+    \end{figure}
+}
+
+\newcommand{\threshver}{\msf{ThreshVerify}}
+\newcommand{\threshsigscheme}{\sigscheme_{\msf{thresh}}}
+\newcommand{\threshkeygen}{\msf{ThreshKeyGen}}
+\newcommand{\threshsign}{\msf{ThreshSign}}
+\newcommand{\threshpubkey}{\msf{vk}}
+\newcommand{\threshprivkey}{\msf{tsk}}
+\newcommand{\threshsig}{\signature}
+
+\newcommand{\wfunc}{\omega}
+
+\newcommand{\totalweight}{W}
+\newcommand{\weight}{w}
+\newcommand{\thold}{T}
+\newcommand{\baseg}{g}
+\newcommand{\gorder}{p}
+\newcommand{\tholdset}{B}
+\newcommand{\tholdsetweight}{W_{\tholdset}}
+
+\newcommand{\zp}{\mbb{Z}_{\gorder}}
+\newcommand{\Gr}{\mbb{G}}
+\newcommand{\RO}{\mc{O}}
+
+\newcommand{\addone}{\alpha}
+\newcommand{\addtwo}{\beta}
+
+\newcommand{\addwone}{\mu}
+\newcommand{\addtwwo}{\nu}
+
+\newcommand{\enc}{E}
+\newcommand{\encN}{N}
+
+\newcommand{\localvalues}{u}
+\newcommand{\dshare}{y}
+
+\newcommand{\keyshare}{x}
+
+\newcommand{\com}{\msf{com}}
+\newcommand{\cvalue}{C}
+\newcommand{\copen}{D}
+\newcommand{\cgen}{\msf{gen}}
+\newcommand{\cver}{\msf{ver}}
+\newcommand{\cequiv}{\msf{equiv}}
+
+\newcommand{\ckey}{\msf{pk}}
+\newcommand{\ctrap}{\msf{tk}}
+\newcommand{\ctoss}{\rand}
+
+\newcommand{\cvalueh}{\widehat{\cvalue}}
+\newcommand{\copenh}{\widehat{\copen}}
+
+\newcommand{\cvaluet}{\widetilde{\cvalue}}
+\newcommand{\copent}{\widetilde{\copen}}
+
+\newcommand{\mempool}{\mc{M}}
+\newcommand{\blockProductionFunction}{f}
+
+\newcommand{\permutationAlgo}{a_{perm}}
+\newcommand{\partylist}{L}
+\newcommand{\keylist}{K}
+\newcommand{\weightkeylist}{\hat{K}}
+\newcommand{\permutedList}{\hat{L}}
+\newcommand{\broadcastAlgo}{a_{broadcast}}
+\newcommand{\subselectionParam}{\theta}
+\newcommand{\indexfunc}{\mc{I}}
+\newcommand{\keysharelambda}{\mathbf{x}}
+
+\newcommand{\sysparam}{\mc{S}}
+\newcommand{\bulletinboard}{\mc{BB}}
+\newcommand{\cvtmsBits}{b_P}
+\newcommand{\bbIdentifier}{ID_\bulletinboard}
+\newcommand{\ddhVer}{\mc{V}_{DDH}}
+
+\newcommand{\Fweight}{{\func}_{wtss}}
+
+\newcommand{\prob}{\Pi}
+\newcommand{\cert}{\msf{cert}}
+\newcommand{\reward}{R}
+
+\newcommand{\rewardFunc}{\Gamma_{reward}}
+
+\newcommand{\cost}{C}
+
+\newcommand{\distinguisher}{\mc{D}}
+
+\newcommand{\members}{W}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% COMPLIANCE
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\poly}{p}
+\newcommand{\honest}{\mc{H}}
+\newcommand{\partySet}{\mathbb{P}}
+\newcommand{\observer}{\Omega}
+
+\newcommand{\miningpower}{\mu}
+
+\newcommand{\genesis}{\block_G}
+\newcommand{\oracle}{\mc{O}}
+
+\newcommand{\mesg}{m}
+\newcommand{\msgSet}{\mathbb{M}}
+\newcommand{\msgOutputSet}{M}
+
+\newcommand{\execution}{\mc{E}}
+\newcommand{\executionSet}{\mathbb{E}}
+\newcommand{\executionTrace}{\Im}
+\newcommand{\proto}{\Pi}
+\newcommand{\strategy}{S}
+\newcommand{\strategySet}{\mathbb{S}}
+\newcommand{\profile}{\sigma}
+\newcommand{\point}{L}
+
+\newcommand{\messageValidityPredicate}{\mc{V}}
+\newcommand{\infractionPredicate}{\mc{X}}
+
+\newcommand{\compliant}{\infractionPredicate\mathsf{-compliant}}
+
+\newcommand{\slot}{r}
+\newcommand{\round}{\slot}
+\newcommand{\epoch}{e}
+\newcommand{\epochLength}{l_\epoch}
+
+\newcommand{\utility}{U}
+\newcommand{\totalReward}{\mc{R}}
+\newcommand{\rewardVal}{\rho}
+\newcommand{\proportionalRewardFunc}{\varrho}
+\newcommand{\universalRewardFunc}{\xi}
+\newcommand{\costVal}{c}
+
+\newcommand{\maxDelay}{D}
+\newcommand{\networkLossProb}{d}
+
+\newcommand{\difficulty}{\delta}
+\newcommand{\powQueryNum}{q}
+\newcommand{\queryCost}{\lambda}
+
+\newcommand{\networkTieProb}{p_n}
+
+\newcommand{\voterSet}{\mathbb{T}}
+\newcommand{\attestation}{\alpha}
+\newcommand{\validator}{V}
+
+\newcommand{\exchangeRate}{X}
+\newcommand{\utilityBoost}{B}
+
+\newcommand{\exchangeRateVal}{x}
+\newcommand{\utilityBoostVal}{b}
+\newcommand{\deposit}{g}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% TAXATION
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\exchange}{\mc{E}}
+\newcommand{\taxAuth}{\mc{T}}
+
+\newcommand{\assets}{\Theta}
+\newcommand{\taxationProto}{\mc{P}_{asset}}
+\newcommand{\taxationAddressProto}{\mc{P}_{address}}
+\newcommand{\balance}{\mathsf{bal}}
+
+\newcommand{\taxBtc}{\ledger^{t}}

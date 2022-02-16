@@ -1,0 +1,86 @@
+Bitcoin, being the most successful cryptocurrency, has been repeatedly attacked
+with many users losing their funds.  As wallets are the only way for a user to
+access their funds, they are repeatedly targeted for attacks that aim to access
+the account's keys or redirect the payments, ranging from clipboard
+hijacking~\cite{clipboardHijack} and malware~\cite{NDSS:HDMDGM14} to
+implementation bugs, \eg the Parity hack in Ethereum~\cite{alois2017ethereum},
+and more specific attacks, \eg brain wallets~\cite{FC:VBCKM16}.  In order to
+address such threats, different ways to harden the wallet's security have been
+proposed, with the most notable one being the utilization of cryptographic
+hardware, \ie \emph{hardware wallets}. These specialized devices currently
+dominate the market and, as demand grows, so does the number of commercially
+available products. However, they are also arguably the least formally studied
+part of cryptocurrency ecosystems, with their specifications and security goals
+remaining unclear and understudied.
+
+The module known as a hardware wallet is responsible for the account's key
+management and the execution of the required cryptographic operations. The
+remaining operations are completed by a dedicated software, either provided
+together with the hardware or by a third party, with which the hardware
+communicates. However, incorporating expensive hardware as a wallet is bound to
+bring some security guarantees. Currently, the security of commercially
+available products can only be checked through manual inspection of their
+implementation, a process that requires a strong engineering and technical
+background, and a significant effort and time commitment. In turn, proprietary
+assumptions and lack of a universal threat model frequently lead to
+implementations prone to attacks.
+
+Our work aims at bridging the gap between formally modeling and verifying the
+wallet's properties and claimed specifications. In this chapter, we devise a
+formal model which defines the characteristics, specifications, and security
+requirements of hardware wallets. Instead of capturing a hardware wallet as a
+single module, we conceptualize it as a system of different modules that
+communicate with each other to perform the wallet's operations. This approach
+allows us to identify a greater set of potential attacks and the conditions for
+them to be successful. To that end, we manually inspect commercial products
+and extract their implementations, which we then map to our model. As we show,
+hardware wallets are prone to a set of attacks and are secure only under
+specific, well-defined assumptions. Therefore, our model can not only prove the
+security of existing implementations, but also act as a reference guide for
+future implementations.
+
+\paragraph{Related work}
+Until now, Bitcoin hardware wallets have only been empirically studied, with
+research focusing on the integrity of transactions. Gentilal
+\etal~\cite{gentilal2017trustzone} stressed the necessity of separating the
+wallet into two environments, the trusted and the non-trusted, and proposed
+that a wallet remains secure against attacks by isolating the sensitive
+operations in the trusted environment. Similarly, Lim
+\etal~\cite{lim2014analysis} and Bamert \etal~\cite{bamert2014bluewallet},
+argue that security in Bitcoin wallets equals with tamper-resistance and
+propose the use of cryptographic hardware. Hardware wallets have not yet been
+extensively studied, since no formal attempt to specify the functionalities and
+the security properties of such wallets exists so far. As of September 2018,
+research  has only focused on attacking commercially available implementations.
+Gkaniatsou \etal~\cite{ISC:GkaAraKia17} showed that the low-level communication
+between the hardware and its client is vulnerable to attacks which escalate to
+the account management.  Their research concluded to a set of attacks on the
+Ledger wallets, which allowed to take control of the account's funds.  Hardware
+wallets have also been studied against physical attacks.
+Volotikin~\cite{volotikin2018bh} showed that specific parts of the Ledger's
+flash memory are accessible, exposing the private keys used for the second
+factor verification mechanism.  Datko \etal presented fault injection, timing
+and power analysis attacks on KeepKey~\cite{keepkey} and Trezor~\cite{trezor},
+which allowed them to extract the private key.
+
+\paragraph{Contributions}
+This chapter provides a holistic formal treatment of hardware wallets,
+identifying their core specifications and security properties.  The proposed
+model allows to reason about the offered security of existing wallets and acts
+as the foundation for designing and implementing new ones. In particular, this
+chapter:
+\begin{inparaenum}[i)]
+ \item defines the properties and requirements of hardware wallets;
+ \item provides a formal model and security guarantees of such wallets;
+ \item evaluates the security of commercial products under a formal model.
+\end{inparaenum}
+
+In more detail, we identify the properties and security parameters of a Bitcoin
+hardware wallet and formally define them in the Universal Composition (UC)
+Framework. We present a modular treatment of a hardware wallet, by realizing
+the wallet as a set of protocols.  This approach allows us to capture in detail
+the wallet's components and interactions, and the potential threats. We deduce
+the wallet's security by proving that it is secure under common cryptographic
+assumptions, provided that there is no deviation in the protocol execution.
+Finally, we define the attacks that are successful under a protocol deviation,
+and analyze the security of commercially available wallets.

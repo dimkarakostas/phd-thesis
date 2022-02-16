@@ -1,0 +1,41 @@
+\section{Block-Proportional Rewards}\label{sec:proportional}
+
+The arguably most common type of rewards in blockchain systems is
+\emph{block-proportional} rewards. Specifically, each party is rewarded
+proportionally to the number of blocks that it contributes to the final chain,
+which is output at the end of the execution.
+
+Block-proportional rewards are a generalization of the \emph{proportional allocation
+rule}, which, for example, is employed in Bitcoin. The proportional allocation rule
+states that a party $\party$'s \emph{expected} rewards of a single block are $\miningpower_{\party}$.
+As shown by Chen \etal~\cite{chen2019axiomatic}, this
+is the unique allocation rule that satisfies a list of desirable properties,
+namely:
+\begin{inparaenum}[i)]
+    \item non-negativity,
+    \item budget-balance,
+    \item symmetry,
+    \item sybil-proofness, and
+    \item collusion-proofness.
+\end{inparaenum}
+
+Our work expands the scope by considering proportional rewards \wrt blocks for
+the entirety of the execution. Specifically,
+Definition~\ref{def:proportional-rewards} describes block-proportional rewards, where
+a party $\party$'s rewards are \emph{strictly monotonically increasing} on the number of blocks that $\party$
+contributes to the chain output by the observer $\observer$. The definition considers a \emph{proportional reward function} $\proportionalRewardFunc(\cdot,\cdot)$ that takes as input the chain of $\observer$ and $\party$ and outputs a value in $[0,1]$.
+
+
+\begin{definition}[Block-Proportional Rewards]\label{def:proportional-rewards}
+    For an execution trace $\executionTrace$, let $\chain_{\observer,\executionTrace}$ be the chain output by $\observer$ and
+    $\totalReward_{\observer,\executionTrace} \in \mathbb{R}_{\geq 0}$ be the
+    total number of rewards which are distributed by the protocol, according to
+    $\observer$. Let $\msgOutputSet_{\party,\executionTrace}$ be the number of
+blocks in the chain output by $\observer$ which are produced by $\party$. A \emph{block-proportional reward} random variable $\reward_{\party, \execution}$ satisfies the
+    following conditions:
+    \begin{enumerate}
+        \item $\forall \executionTrace \; \forall \party \in \partySet: \reward_{\party, \executionTrace} = \proportionalRewardFunc(\chain_{\observer,\executionTrace}, \party) \cdot \totalReward_{\observer,\executionTrace}$
+        \item $\forall \executionTrace: \sum_{\party \in \partySet} \proportionalRewardFunc(\chain_{\observer,\executionTrace}, \party) = 1$
+        \item $\forall \executionTrace \; \forall \party, \party' \in \partySet:\msgOutputSet_{\party,\executionTrace}>\msgOutputSet_{\party',\executionTrace}\Rightarrow \proportionalRewardFunc(\chain_{\observer,\executionTrace}, \party) > \proportionalRewardFunc(\chain_{\observer,\executionTrace}, \party')$
+    \end{enumerate}
+\end{definition}

@@ -1,0 +1,216 @@
+\section{Security Analysis}\label{sec:theorem}
+
+We now assess the security of the proposed model, to prove the security of the
+hybrid setting \wrt $\Fw$. Our model, as defined in $\Fw$, incorporates the
+following problematic scenarios:
+\begin{enumerate}[1)]
+    \item \label{item:privacy} \emph{Privacy loss}: when $\adversary$
+        corrupts a client, he accesses the account's public keys, addresses, and
+        balance;
+    \item \label{item:payment} \emph{Payment attack}: during transaction
+        issuing, $\adversary$ may tamper with the inputs to alter the payable
+        amounts and/or the receiving address; this attack is successful if
+        the client is corrupted \emph{and} the user deviates from their expected
+        behavior, \ie does not reject the malicious data;
+    \item \label{item:genAdd} \emph{Address generation attack}: $\adversary$
+        may tamper with address generation on the client's side, providing an
+        adversarial address to the user; again, this attack is successful if
+        the client is corrupted \emph{and} the user deviates from their expected
+        behavior, \ie does not cross-check the addresses provided by the client
+        and the hardware;
+    \item \label{item:balance} \emph{Chain attack}: $\adversary$ may tamper
+        with the balance calculation by providing a malicious chain to the
+        wallet; this family of attacks is successful if only the client is
+        corrupted, \ie regardless if the user follows the protocol.
+\end{enumerate}
+
+Although the first three scenarios have been previously identified by empirical
+studies~\cite{receiveAttack,ISC:GkaAraKia17}, the \emph{chain attack} is more
+nuanced. Under our model, the client is the only party that connects to the
+network. Therefore, a corrupted client can mount an eclipse
+attack~\cite{USENIX:HKZG15}, like the chain attack showcased by the following
+example.
+
+Let $\chain_\top$ be the honest chain, \ie the longest chain available on the
+network. Also, let $\tx$ be a transaction which transfers $\asset_\msf{in}$
+funds to an address $\addr$; $\tx$ is published in the $j$-th block $\block_j$
+of $\chain_\top$. Let $\chain \prec \chain_\top$ be a prefix of $\chain_\top$,
+which does not include $\block_j$. Also assume that $\chain$ includes a number
+of transactions, which transfer an aggregate amount $\asset_\msf{past}$ to
+$\addr$. When the hardware requests a chain, the adversary $\adversary$
+supplies $\chain$ instead of $\chain_\top$. Hence, during balance calculation,
+the wallet assumes that $\addr$ owns only $\asset_\msf{past}$ funds, instead of
+the correct amount $\asset_\msf{past} + \asset_\msf{in}$. Following, when the
+user attempts to spend the assets owned by $\addr$, the wallet does not consume
+the latest UTxO (of $\asset_\msf{in}$ assets), as it is not aware of it.  This
+may result in various hazards, from displaying a wrong balance to the user to
+failing to recover these funds, \eg if the wallet deletes old (\ie consumed)
+addresses.
+
+To prove the security of our model, we show that the hybrid setting of
+Section~\ref{sec:hybrid-protocol} (denoted by $\phybrid$) securely realizes the
+wallet ideal functionality $\Fw$ of Section~\ref{sec:fwallet}. In the ideal
+execution, $\Gledg$ uses the wrapper $\msf{IdealValidateWrapper}$ of
+Section~\ref{sec:validation_predicate}, whereas in the real world it
+utilizes~$\msf{RealValidateWrapper}$. Theorem~\ref{thm:hybridwallet} is
+restricted to environments that do not corrupt the hardware party $\hardware$;
+in effect, our analysis does not consider attacks mounted by the hardware's
+manufacturer or physical attacks.
+
+\begin{theorem}[Hybrid Wallet]\label{thm:hybridwallet}
+    Let the hybrid setting $\phybrid$, which is parameterized by a signature
+    scheme $\Sigma$ and a hash function $\hash$, and interacts
+    with $\Gledg$, parameterized by $\msf{RealValidateWrapper}$. $\phybrid$
+    securely realizes the ideal functionality $\Fw$, which interacts with
+    $\Gledg$ parameterized by $\msf{IdealValidateWrapper}$, if and only if
+    $\Sigma$ is $\eufcma$ and $\hash$ is an instantiation of the random oracle.
+\end{theorem}
+
+\begin{proof}
+    \emph{The ``if'' part.}
+    For this part of the theorem we assume that the environment $\env$ can
+    distinguish between the ideal and the real execution with non-negligible
+    probability. We then describe a ``generic'' simulator $\simulator$ for each
+    adversary $\adversary$, which emulates the interfaces defined by the
+    functionality.  $\simulator$ also runs an internal copy of $\adversary$ and forwards
+    the outputs of its computations to $\adversary$. We then construct a forger
+    $G$ that runs an internal simulation of the environment $\env$. Thus, for
+    each property assumption, we show that there exists a ``bad'' event $E$
+    such that, as long as $E$ does not occur, the two executions are
+    statistically close. However, when $E$ occurs, the environment $\env$
+    distinguishes between the executions. At this point, $G$ uses $\env$ and
+    outputs the values that break the property under question. Therefore, since,
+    by assumption, $E$ occurs with non-negligible probability, we show that $G$
+    is also successful with non-negligible probability.
+
+    \emph{The simulator.}
+    Let us now construct the generic simulator $\simulator$. For every
+    interface defined by the ideal functionality, $\simulator$ completes the
+    operations in the manner defined by the protocols in the hybrid setting. It
+    internally runs a copy of the adversary $\adversary$ and forwards the
+    necessary messages to it as defined in the hybrid setting. So, the view of
+    the $\adversary$ when it interacts with $\simulator$ is the same as in the
+    case it operates in the real world setting. $\simulator$ performs as
+    follows:
+    \begin{itemize}
+        \item Any inputs received from the environment $\env$, forward them to
+            the internal copy of $\adversary$. Moreover, forward any output from
+            $\adversary$ to $\env$;
+        \item \emph{Party Setup:} For every party $\party$ for which $\Fw$
+            sends messages, spawn an internal simulation of $\user$, $\client$,
+            and $\hardware$, which also interact with $\adversary$ as needed
+            and run the protocols $\ph$, $\pclient$ and $\Fhw$ respectively;
+        \item \emph{Party Corruption:} Whenever the adversary $\adversary$
+            corrupts a party, $\simulator$ corrupts it in the ideal process and hands to
+            $\adversary$ its internal state;
+        \item \emph{(Setup, Initialize Session, Generate Address, Issue
+            Transaction):} For any message for these interfaces, follow the
+            protocols $\ph$, $\pclient$, and $\Fhw$.
+     \end{itemize}
+
+     To prove the theorem regarding the properties of the signature
+     scheme we follow the reasoning of Canetti~\cite{EPRINT:Canetti03}. We will
+     show the proof for the \emph{unforgeability} property of the signature
+     scheme, as the proofs for the other properties follow similarly.
+
+     \emph{Unforgeability.}
+     Assume that \emph{consistency} and \emph{completeness} hold for
+     $\Sigma$ and $\hash$ instantiates the random oracle. In this
+     case, the \emph{Setup, Initialize Session} and \emph{Generate Address}
+     interfaces are the same in the both settings from $\adversary$'s point of
+     view. Since, by assumption, $\env$ distinguishes between the two, this
+     occurs during the \emph{Issue Transaction} phase, \ie by observing a
+     valid signature of a transaction which has not been issued by the hardware
+     wallet.
+
+     We now construct a forger $G$ that runs a simulated copy of $\env$. $G$
+     follows the generic simulator as above, except for the transaction issuing
+     interface. Upon receiving $\msg{Submit}{\tx_{\sig}}$, where $\tx_\sig =
+     (\tx, \pubkey, \sig)$, it checks if $\algoverify(\tx, \pubkey, \sig) =
+     \msf{True}$. If so, it accesses the internal state of the hardware
+     $\hardware$ and checks whether it has issued $\tx_{\sig}$. If so, then it
+     continues the simulation. Else $G$ outputs $\tx_{\sig}$ as a forgery.
+     Since, as long as this does not occur, the two executions are
+     statistically close and, by assumption, $\env$ is successful with
+     non-negligible probability, then the probability that $G$ is also
+     successful is non-negligible.
+
+    \emph{The ``only if'' direction.}
+    We show that if one property does not hold, the probability that the
+    ``bad'' event $E$ (as above) occurs is non-negligible, so that the
+    environment $\env$ can distinguish between the real and ideal executions.
+    Again we prove the theorem for the \emph{unforgeability} property, as
+    the proofs for the other properties of $\Sigma$ are constructed similarly.
+    Also, we conclude the proof with the \emph{address randomness} property,
+    which accompanies the assumption that $\hash$ instantiates a random oracle.
+
+     \emph{Unforgeability.}
+     Assume that \emph{unforgeability} does not hold for $\Sigma$, \ie there
+     exists a forger $G$ for $\Sigma$. When $G$ wishes to obtain a signature for
+     some message $m$, the environment sends the message $\msg{IssueTx}{m}$ and
+     forwards the response to $G$. When $G$ outputs a forgery $\tx_{\sig} = (\tx, \pubkey,
+     \sig)$, if $\tx$ has been previously signed, $\env$ halts. Else it sends
+     $\tx_{\sig}$ to $\Gledg$ and observes the ledger's updates. In the ideal
+     setting, the transaction will be rejected by the validation predicate and
+     will never be included in the ledger. However, in the real world, the
+     probability that the transaction is accepted and eventually published in
+     the ledger is non-negligible, as the forgery output by $G$ is successful
+     with non-negligible probability.
+
+     \emph{Address randomness.}
+     Assume that all properties for $\Sigma$ hold. Now, the \emph{Setup,
+     Initialize Session} and \emph{Issue Transaction} interfaces are similar in
+     both settings. So, if the two worlds are distinguishable, then this is due
+     to address generation. Specifically, $\env$ should observe addresses which
+     are not uniformly distributed over the space of possible addresses. This
+     is impossible in the ideal world, by construction. However, if this was
+     true for the real world, then $\hash$ would not instantiate the random
+     oracle. Therefore, by assumption, it is impossible for $\env$ to distinguish
+     between the two worlds.
+\end{proof}
+
+Our model, and the accompanying Theorem~\ref{thm:hybridwallet}, can be used to
+prove the security of any hardware wallet that realizes the hybrid setting.
+Specifically, to evaluate a wallet implementation, we first need to identified
+whether it faithfully realizes the three protocols. Under this premise, the
+security assumptions of its building components should be evaluated. More
+precisely, the signature algorithm that the wallet uses must be $\eufcma$, the
+hash function must simulate the random oracle, and the communication channels
+between the parties must be secure. Typical examples of such components are the
+\emph{ECDSA}~\cite{johnson2001elliptic} signature algorithm and a
+\emph{SHA-2}~\cite{penard2008secure} hash function. If these assumptions hold,
+then the wallet is secure under our model.
+
+Finally, one core assumption that deems further investigation is the honesty of
+the human user of the wallet. In Section~\ref{subsec:human-protocol}, we
+presented a well-defined protocol that the user should follow. As shown in
+Section~\ref{sec:theorem}, as long as the parties follow the defined protocols
+faithfully, and the cryptographic primitives used are strong enough, the
+hardware wallet is secure. The integrity of transaction issuing and address
+generation is based, however, on the assumption that the user follows $\ph$
+correctly.
+
+$\ph$ requires from the user to identify malicious data, by comparing the data
+shown by the client with the data shown by the hardware. In practice, the
+presented data is long hexadecimals (\ie Bitcoin addresses). However, even
+though such comparison is trivial for software, people are prone to errors.
+Comparison of long hexadecimal strings has been proved a challenging procedure,
+with research~\cite{hsiao2009study,tan2017can,FC:UzuKarAso07} suggesting that
+it is unrealistic to expect a perfect comparison of cryptographic hashes, as
+humans find this process difficult. In real world scenarios, the user typically
+acts hastily, which often causes deviations from the ``honest'' behavior.
+Additionally, expecting the user to manually copy a Bitcoin address from the
+hardware's screen defeats the usability purposes of the wallets. Thus, it is
+highly possible that the user simply copies the address directly from the
+client. Hence, such usability difficulties of the compare-and-confirm process
+open an attack vector for the payment and address generation attacks.
+
+We model the probability of a user diverging from $\ph$ as a random variable
+$\Hprob$.  The distribution of $\Hprob$ may vary, depending both on the
+vigilance of the user and usability parameters. For example, a user allowing
+all requests to be completed without checks, \eg because the process takes too
+long and the data is difficult to read, demonstrates $\Hprob$ close to $1$. A
+user who carefully checks the data, \eg because the hardware presents it in
+such way that captures the user's attention, demonstrates $\Hprob$ closer to
+$0$. Finally, another factor that affects $\Hprob$ is address length; the
+longer the address, the more difficult to read and compare.

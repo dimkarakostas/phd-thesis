@@ -1,0 +1,587 @@
+\section{Security Analysis}
+
+The security of $\ProtoW$ is given \wrt $\FuncW^{M}$, the signature scheme's
+Existential Unforgeability under Adaptive Chosen Message Attacks (\eufcma)
+property, and a number of properties of our custom algorithms. Therefore,
+before presenting the analysis for $\FuncW^{M}$ parameterized with the
+predicate $M_{\mathsf{SM}}$, we introduce the properties of the address and
+metadata generation algorithms.
+
+\subsection{Properties of  the Generation Algorithms}\label{subsec:addrgen_properties}
+
+Briefly, $\mathsf{GenAddr}$ is the address generation algorithm which, given an
+attribute list, returns an address. This algorithm is implemented in
+Section~\ref{sec:address}, although $\ProtoW$ can be parameterized with any
+address generation scheme which offers the necessary properties.
+
+Specifically, address generation should be collision resistant, \ie analogously
+to hash functions, it should be infeasible for an adversary to produce the same
+address for different attribute lists, cf.
+Definition~\ref{def:address_collision}. Also address generation should be
+attribute non-malleable, \ie it should be infeasible for an adversary to
+generate valid addresses for a payment key without access to the entire
+attribute list (including the private attributes), cf.
+Definition~\ref{def:address_non_malleability}. In addition, we assume that
+$\algohierarchicalkeygen(\cdot)$ is hierarchical, \ie the distribution of
+produced keys is indistinguishable from that of $\algokeygen$, cf.
+Definition~\ref{def:hierarchical_keygen_ind}, and $\algorecoverytaggen(\cdot)$
+is collision resistant, thus ensuring that the recovery tags are both unique
+(with overwhelming probability) and deterministically computable.
+
+\paragraph{Address and Attribute Generation Properties}
+In order to prove the security of our protocol, the address generation
+algorithm $\mathsf{GenAddr}: \Delta_1 \times \ldots \times
+\Delta_\addrgenlength \rightarrow \addresset$ should offer the following
+properties.
+\begin{definition}[Address collision resistance]\label{def:address_collision}
+    Analogously to hash functions (cf.
+    Definition~\ref{def:hash}), $\mathsf{GenAddr}$ is collision
+    resistant when it is infeasible to produce two different attribute lists
+    $l_i = (\attribute^{i}_{1}, \dots, \attribute^{i}_{g})$ for $i \in \{1, 2\}$,
+    \ie they differ in at least one attribute like $\exists j \in [1,
+    \addrgenlength]$: $\attribute^{1}_j \neq \attribute^{2}_j$, such that
+    $\mathsf{GenAddr}(l_1) = \mathsf{GenAddr}(l_2)$, after running
+    $\mathsf{GenAddr}(\cdot)$ a polynomial number of times.
+\end{definition}
+
+Similarly, we assume the existence of an algorithm $\mathsf{GenMeta}:\Delta_1
+\times \ldots \times \Delta_\addrgenlength \rightarrow \{0,1\}^{p(\secparam)}$
+for the generation of the metadata $m$ associated with the address. Before
+describing extra properties for $\mathsf{GenAddr}$,  we introduce the following
+property for the $\mathsf{GenMeta}$ function.
+
+\paragraph{Metadata extraction resistance}
+For a challenge address $\addr$ with attribute list $l$, it is intractable for
+the  adversary that is given $\addr$ and the public attributes to generate the
+metadata information $m$, such that $\mathsf{GenMeta}(l) = m$, even with
+polynomial number of address generation and metadata queries, upon arbitrary
+choices of public attributes
+$(\attribute^\prime_{i}, \dots, \attribute^\prime_{\addrgenlength})$. We say that
+$\mathsf{GenMeta}$ algorithm has metadata extraction resistance with respect to
+private attributes $(\attribute_{1}, \dots, \attribute_{i-1})$ from an attribute
+list $l=(\attribute_{1}, \dots, \attribute_{g})$, and address generation
+algorithm $\mathsf{GenAddr}$, when for every attribute list $l \in \Delta_1
+\times \ldots \times \Delta_\addrgenlength$, and a fixed index $i$, such that
+the private list of attributes is $d = (\attribute_1, \dots, \attribute_{i-1})$,
+it holds that:
+\begin{align}
+    \Pr\left[
+    \begin{tabular}{c}
+        $l = (\attribute_{1}, \dots, \attribute_\addrgenlength)$, \\
+        $\addr \leftarrow \mathsf{GenAddr}(l)$, \\
+        $m^\prime \leftarrow \adv^{\mathsf{GenAddr}^{d}(\cdot)}(\attribute_{i}, \dots, \attribute_\addrgenlength)$ \\
+    \end{tabular}
+    :
+    \mathsf{GenMeta}(l)=m^\prime
+    \right]
+    \leq \negl(\secparam) \nonumber
+\end{align}
+where the probabilities are computed on the used randomness, the values of $l$
+and every PPT adversary $\adv$.
+
+\begin{definition}[Non-malleable attribute address generation]\label{def:address_non_malleability}
+    Let $\attributedistribution$ be a distribution of attribute lists, such
+    that $\textsc{dom}(\attributedistribution) = \addrgendomain$, and that
+    $\attribute_{1},\dots,\attribute_{i}$, \ie the first attributes of  the
+    attribute list $l \leftarrow \textsc{dom}(\attributedistribution)$, relate
+    to a property over which we define non-malleability. \emph{Even with access
+    to the metadata} of the address, \ie the semi-public attributes, it is
+    infeasible for the adversary to generate valid addresses, \ie acceptable
+    addresses with the same verification payment key, from $\addr$, without
+    accessing the attribute list, including the private attributes.
+    Concretely, given $\mathsf{Addrs}$, \ie the list of addresses queried by
+    $\adv$ to the oracle $\mathsf{GenAddr}^{d}(\cdot)$, it holds that:
+    \begin{align}
+        \Pr\left[
+        \begin{tabular}{c}
+        $l = (\attribute_{1}, \dots, \attribute_\addrgenlength)$, \\
+        $\addr \leftarrow \mathsf{GenAddr}(l)$, \\
+        $(\addr^\prime, \attribute^\prime_{i}, \dots, \attribute^\prime_\addrgenlength) \leftarrow \adv^{\mathsf{GenAddr}^{d}(\cdot), \mathsf{GenMeta}^{d}(\cdot)}(\attribute_{i}, \dots, \attribute_\addrgenlength)$ \\
+        \end{tabular}
+         \right. : \nonumber \\
+        \left.
+        \begin{tabular}{c}
+        $(\mathsf{GenAddr}^d(\attribute^\prime_{i}, \dots, \attribute^\prime_\addrgenlength) = \addr^\prime) \wedge$ \\
+        $(\addr^\prime\neq\addr) \wedge$ \\
+        $(\addr^\prime \not \in \mathsf{Addrs})$ \\
+        \end{tabular}
+        \right]
+        \leq \negl(\secparam) \nonumber
+    \end{align}
+    for probabilities computed over the randomness  in $\mathsf{GenAddr}$
+    algorithm, every PPT adversary $\adversary$ and the values of $l$.
+\end{definition}
+
+\paragraph{Hierarchical Key Generation Properties}\label{subsec:hierarchical_keygen_properties}
+
+We now define the hierarchical property of the key generation function
+$\algohierarchicalkeygen(\cdot)$, which is used by the core wallet protocol $\ProtoW$.
+Intuitively, this allows us to use $\algohierarchicalkeygen$ in order to
+securely and deterministically produce keys for indexes, instead of using the
+$\algokeygen$ function of $\sigscheme$.
+
+\begin{definition}[Hierarchical Key Generation]\label{def:hierarchical_keygen_ind}
+    Assume a signature scheme $\sigscheme$. A key
+    generation function $\algohierarchicalkeygen(\cdot)$ is hierarchical for
+    $\sigscheme$ if, for all parameters $i$, the distribution of keys produced
+    by $\algohierarchicalkeygen(i)$ is computationally
+    indistinguishable from the distribution
+    of keys produced by $\algokeygen$.
+\end{definition}
+
+\subsection{Security in the Sink Malleable Setting}
+
+We now describe the core theorem of this chapter. Here, the ideal
+functionality, parameterized with the sink malleability predicate
+$M_{\mathsf{SM}}$, is realized by the protocol that employs the sink
+malleable address generation function. It also uses tag and hierarchical key
+construction functions which present the above necessary properties.
+
+\begin{theorem}\label{thm:sec_sink_malleable}
+    Let the generic protocol $\ProtoW$ be parameterized by a signature scheme
+    $\sigscheme$
+    and the $\algorecoverytaggen$, $\algohierarchicalkeygen$, and
+    $\mathsf{GenAddr}$ functions. Then $\ProtoW$ securely realizes the ideal
+    functionality $\FuncW^{M_{\mathsf{SM}}}$ if and only if $\sigscheme$ is
+    $\eufcma$, $\mathsf{GenAddr}$ is collision resistant and attribute
+    non-malleable (cf. Definitions~\ref{def:address_collision}
+    and~\ref{def:address_non_malleability}), $\algorecoverytaggen$ is collision
+    resistant (cf. Definition~\ref{def:hash}), and $\algohierarchicalkeygen$ is
+    hierarchical for $\sigscheme$ (cf.
+    Definition~\ref{def:hierarchical_keygen_ind}).
+\end{theorem}
+
+\begin{proof}
+    The proof is constructed in the UC Framework, therefore it is a simulation
+    based proof. As such, we will show that the environment $\env$ cannot
+    efficiently distinguish between two executions, the ideal and the real.
+    Here, the simulator $\Iadv$ interacts with the ideal functionality
+    $\FuncW^{M_{\mathsf{SM}}}$ in the ideal execution, whereas $\adv$ interacts
+    with $\ProtoW$ in the real execution.
+    We divide the proof in the ``if'' and ``only
+    if'' parts. First, the ``if'' part shows that if $\ProtoW$ does securely
+    realize the ideal functionality $\FuncW^{M_{\mathsf{SM}}}$, when
+    instantiated with a $\eufcma$ signature scheme $\Sigma$, a collision
+    resistant and non-malleable address generation scheme $\mathsf{GenAddr}$,
+    and suitable $\algorecoverytaggen, \algohierarchicalkeygen$ functions at
+    least one of the conditions is violated. The ``only if'' part shows that,
+    if either of the functions' properties does not hold, \eg if $\Sigma$ is
+    not $\eufcma$ or $\mathsf{GenAddr}$ is either not collision resistant or
+    non-malleable, then $\ProtoW$ does not securely realize the functionality
+    $\FuncW^{M_{\mathsf{SM}}}$, \ie the environment is able to distinguish
+    between the two executions.
+
+    Let us now provide the construction for the simulator $\Iadv$, which will
+    be useful in the ``if'' part of the proof.
+
+    \emph{The simulator $\Iadv$.}
+    The simulator $\Iadv$ runs internally a copy of the adversary $\adv$, and
+    keeps a table $\mathsf{TABLE}$ of tuples $(\cdot,\cdot,\cdot,\cdot)$ of
+    respectively addresses, attributes, and staking key pairs. Also it performs
+    as follows:
+
+    \begin{itemize}
+        \item Any inputs received from the environment $\env$, forward them to
+            the internal copy of $\adv$. Moreover, forward any output from
+            $\adv$ to $\env$;
+        \item \emph{Initialization:} Upon receiving $\msg{Initialise}{}$ from
+            the functionality $\FuncW$, compute a dummy master key $\masterprivkey
+            \xleftarrow{\$} \{0,1\}^\secparam$ and return
+            $\msg{InitialiseOk}{}$;
+        \item \emph{Address Generation: } Upon receiving the message
+            $\msg{GenerateAddress}{\msf{aux}}$ from $\FuncW$, do similarly to
+            protocol $\ProtoW$, that is:
+            \begin{itemize}
+                \item set $i \leftarrow \indexSet$,
+                \item set the key pair $(\paymentkeyverify_c, \paymentkeysign_c) = \algohierarchicalkeygen(\langle \masterprivkey, \msf{payment}, i \rangle)$,
+                \item set the tag $\msf{wrt} = \algorecoverytaggen(\langle \masterprivkey, i \rangle)$,
+            \end{itemize}
+            and do the following:
+            \begin{itemize}
+                \item if $\msf{aux} = (\msf{base})$ compute
+                    $(\stakingkeyverify_c, \stakingkeysign_c) = \algohierarchicalkeygen(\langle \masterprivkey, \msf{staking}, i \rangle)$
+                    and set $\beta = \stakingkeyverify_c$;
+                \item if $\msf{aux} = (\msf{pointer}, \stakingkeyverify)$, set
+                    $\beta = \stakingkeyverify$;
+                \item if $\msf{aux} = (\msf{exile})$, set $\beta = \bot$.
+            \end{itemize}
+            Then compute $\addr = \mathsf{GenAddr}(\langle \msf{aux}, \beta,
+            \paymentkeyverify_c, \msf{wrt} \rangle)$ and set its attribute list $\addresslist = \langle
+            \stakingkeyverify_c, \msf{wrt}, \msf{aux}, \paymentkeyverify_c,
+            \paymentkeysign_c, \stakingkeysign_c \rangle$. Then record the
+            tuple $(\addr, \addresslist, \beta, \paymentkeysign_c)$ to
+            $\mathsf{TABLE}$. Finally, hand to $\FuncW$ the message
+            $\msg{Address}{\addr, \addresslist}$;
+
+        \item \emph{Issue Transaction:} Upon receiving $\msg{Pay}{\assetset,
+            \addr_s, \addr_r, m}$ find a record $\addresslist \in \mathsf{TABLE}$ that contains the sender's address $\addr_s$ as
+            the first item. Then generate the signature $\sign$ for the
+            transaction $\tx$, such that $\tx = (\assetset, \addr_s, \addr_r,
+            m)$, using $\mathsf{Sign}$ and the payment key of $\addr_s$, and
+            hand the message $\msg{Transaction}{\tx, \sign}$ to the
+            functionality $\FuncW$. Note that with the attribute list
+            $\addresslist$, $\Iadv$ can properly generate $\sign$. Moreover
+            such record is expected to be in $\mathsf{TABLE}$, since the
+            functionality allows the issuing of transactions by properly
+            generated addresses by checking on the list $L_{P}$ before sending
+            to $\Iadv$;
+
+        \item \emph{Verify Transaction:} Upon receiving the message
+            $\msg{VerifyPayment}{\tx, \sign}$ from $\FuncW$, find the recorded
+            verification key $\paymentkeyverify_c$ for the sender's address
+            $\addr_s$ in $\tx = (\assetset, \addr_s, \addr_r, m)$ by looking up
+            $\addresslist$ for $\addr_{s}$ in $\mathsf{TABLE}$, and use
+            $\mathsf{Verify}$ to retrieve the verification bit $\phi$. Then
+            return $\msg{VerifiedPayment}{\tx, \sign, \phi}$ to $\FuncW$;
+
+        \item \emph{Issue Staking:} Similarly to issuing a payment, upon
+            receiving $\msg{Stake}{\tx_s}$, such that
+            $\tx_s = (\paymentkeyverify, m)$, find the correspondent staking key
+            $\paymentkeysign$ and use $\mathsf{Sign}$ to generate the signature
+            $\sign$, then hand $\msg{Staked}{\tx_s, \sign}$ to $\FuncW$;
+
+        \item \emph{Verify Staking:} As before, upon receiving the message
+            $\msg{VerifyStaking}{\tx_s, \sign}$, find the staking key that
+            pertains to $\tx_s$, use $\mathsf{Verify}$ to retrieve the
+            verification bit $\phi$, and send the message
+            $\msg{VerifiedPayment}{\tx_s, \sign, \phi}$ to $\FuncW$. Similarly to
+            \emph{Issue Transaction} interface, note that $\Iadv$ knows
+            $\paymentkeysign_c$ via $\mathsf{TABLE}$;
+
+        \item \emph{Party Corruption:} Whenever the adversary $\adv$ corrupts a
+            party $P$, $\Iadv$ corrupts it in the ideal process and hands to
+            $\adv$ the corresponding entries in $\mathsf{TABLE}$.
+    \end{itemize}
+
+    \emph{The ``if'' part.}
+    Assume, for the sake of the argument, that the environment $\env$ can
+    distinguish between the ideal and the real execution with non-negligible
+    probability for any simulator construction, including the earlier $\Iadv$
+    construction. In that case, it suffices to show that, if $\ProtoW$ does not
+    securely realize  $\FuncW$, and given the $\Iadv$ construction, then either
+    of the following holds when a ``bad'' event $E$ occurs: the signature
+    scheme is not $\eufcma$, $\mathsf{GenAddr}$ is not collision resistant or
+    attribute non-malleable, the function $\algorecoverytaggen$ is not
+    collision resistant, or the hierarchical property of
+    $\algohierarchicalkeygen$ does not hold.
+
+    \emph{Unforgeability:} We assume that \emph{collision} resistance and
+    non-malleability properties of the algorithm $\mathsf{GenAddr}$ hold,
+    likewise the collision resistance and hierarchical properties for
+    $\algorecoverytaggen$ and $\algohierarchicalkeygen$ respectively, along
+    with the signature scheme properties \emph{completeness} and
+    \emph{non-repudiation}, but unforgeability does not hold (otherwise the
+    theorem completes). Note that, by hypothesis, $\env$ distinguishes between
+    the two worlds for any construction of $\Iadv$, including the earlier
+    $\Iadv$ construction.
+
+    Now we construct a forger $G$ for the unforgeability game per the $\eufcma$
+    definition, which initially receives $(\paymentkeyverify,\paymentkeysign)$
+    as a challenge (we focus on the payment keys and interfaces, but we note
+    that the case for staking is analogous). $G$ simulates the earlier
+    described $\Iadv$ in the interaction with $\env$. It then issues signature
+    queries to its game, when requested by its simulation of $\Iadv$ and
+    $\FuncW$ for signatures on $\paymentkeyverify$.
+
+    In addition, when receiving verification messages of the form
+    $\msg{VerifyPayment}{\tx, \sign}$ for other addresses (possibly from other
+    verification keys), $G$ uses its internal simulation, specifically the
+    \emph{Transaction Verification} interface, \ie its internally generated
+    keys, to properly simulate the execution to $\env$. In particular it checks
+    if $(\tx, \sigma)$  has been queried in the security game. If it is not
+    listed as queried and $\algoverify(\tx, \sigma, \paymentkeyverify) = 1$,
+    then it outputs $(\tx, \sign)$ and wins the game. Otherwise, it continues
+    with the simulation.
+
+    Given that the environment $\env$ distinguishes between the two executions
+    by hypothesis and all other properties of the functions hold, we are
+    guaranteed that if $\ProtoW$ does not securely realize $\FuncW$, then the
+    unforgeability property does not hold.
+
+    Note that the earlier unforgeability reasoning is valid for $\sigscheme$
+    with key generation relying on $\algokeygen$, however $\ProtoW$ relies on
+    $\algohierarchicalkeygen$. Therefore, consider the following argument.
+
+    \emph{$\algohierarchicalkeygen$ is hierarchical for $\sigscheme$ and
+    every index $i$ is used only once:} Assume the two following protocols:
+        \begin{inparaenum}[i)]
+            \item a protocol which is similar to $\ProtoW$, except the key
+                generation function $\algokeygen$ of $\sigscheme$ is used
+                instead of $\algohierarchicalkeygen$, and
+            \item the protocol $\ProtoW$.
+        \end{inparaenum}
+        Now, it is evident that the first protocol securely realizes the ideal
+        functionality (since all other properties needed as per the Theorem
+        hold). Therefore, the execution of the first protocol is
+        indistinguishable from the execution of the ideal functionality, as
+        proved in the earlier reasoning.
+
+        Next, consider a PPT algorithm $D$ who tries to distinguish between the
+        executions of the two protocols above. Specifically, assume that there
+        exists a ``special'' index $i$, for which the usage of
+        $\algohierarchicalkeygen$ in the signature scheme is insecure, \ie a
+        forgery can be computed by the adversary. For the sake of argument,
+        consider the probability that the scheme breaks for this index $i$ by
+        $p$. It is clear that, for this index $i$, $D$ is successful, by
+        observing the violation of the properties of the signature scheme with
+        $\algohierarchicalkeygen$. Note also that the number of produced keys,
+        \ie the number of used indexes in both executions, is bounded by a
+        polynomial $P(\secparam)$. Therefore, the overall probability that $D$
+        is successful is equal to $\frac{p}{P(\secparam)}$.
+
+        However, by definition, $\algohierarchicalkeygen$ is hierarchical for
+        $\sigscheme$. Thus, the executions of the two protocols are
+        indistinguishable and, as a result, the probability that $D$ is
+        successful, \ie $\frac{p}{P(\secparam)}$, is negligible. Consequently,
+        the probability $p$, \ie that the signature scheme which uses
+        $\algohierarchicalkeygen$ breaks, is also negligible. Therefore, the
+        execution of $\ProtoW$ is indistinguishable from the execution of the
+        ideal functionality as well, thereby $\ProtoW$ securely realizes the
+        ideal functionality.
+
+    \emph{The ``only if'' part.}
+    Here we show that, if a single property does not hold, then the environment
+    $\env$ can distinguish between the real and ideal executions with
+    non-negligible probability. In other words, there is no simulator
+    construction that prevents $\env$ from distinguishing both executions.
+
+    \emph{Success probability of $\env$ under weakened assumptions.}
+    We now assume that some property of the functions used by the protocol is
+    broken. We will then show that $\ProtoW$ does not securely realize
+    $\FuncW$. Specifically, we can create an environment $\env$ and an
+    adversary $\adv$ such that, for \emph{any} simulator $\Iadv$, $\env$
+    distinguishes between the real execution of $\adv$ with $\ProtoW$ and the
+    ideal execution of $\Iadv$ with $\FuncW$.
+
+    Initially, the environment sends $\msg{Initialise}{}$ for some party $\party$.
+    For each property required by the theorem, we show that the environment can
+    distinguish between the two executions as follows:
+
+    \begin{itemize}
+        \item \emph{Completeness:} We assume that $\Sigma$ is not complete.
+            $\env$ initializes the wallet for a second party $\party'$ and
+            sends two messages $\msg{GenerateAddress}{\msf{aux}}$, for some
+            arbitrary auxiliary information $\msf{aux}$, and obtains two
+            addresses $\addr_s$ and $\addr_r$ for the parties $\party$ and $\party'$
+            respectively. Next, it creates a transaction object $\tx =
+            (\assetset, \addr_s, \addr_r, m)$, for arbitrary values of assets
+            $\assetset$ and metadata $m$, and obtains a signature $\sign$ for
+            the transaction $\tx$ by sending the message $\msg{Pay}{\tx}$.
+            Finally, it calls the verification interface by
+            sending the message $\msg{VerifyPayment}{\tx, \sigma}$. In the ideal
+            execution the output is always $\msg{VerifiedPayment}{\tx, \sigma,
+            1}$, whereas in the real execution the probability that the output
+            is $\msg{VerifiedPayment}{\tx, \sigma, 0}$ is
+            non-negligible. The environment could also succeed in
+            distinguishing the executions by accessing the \emph{Staking} and
+            \emph{Staking Verification} interfaces, issuing staking acts and
+            checking the verification bit similarly as with payment
+            transactions.
+
+        \item \emph{Non-repudiation:} We assume that $\Sigma$ does not offer
+            non-repudiation. The environment now acts like in the case of
+            \emph{completeness}, obtaining a signed transaction $(\tx,
+            \sigma)$.  However, it now calls the verification interface twice.
+            In the ideal execution, the verification bit of the response will
+            both times be equal to $1$, whereas in the real execution the
+            probability that the verification bit is $0$ is non-negligible.
+            Again the environment could access the staking issuing and
+            verification interfaces similarly.
+
+        \item \emph{Unforgeability:} We assume that $\Sigma$ is forgeable, so
+            there exists a forger $G$ for $\Sigma$. The environment now runs an
+            internal copy of $G$. When $G$ wishes to obtain a signature from
+            its oracle for some transaction $\tx$, $\env$ accesses the
+            \emph{Issue Transaction} interface by sending the message
+            $\msg{Pay}{\tx}$ and obtains a signature, which it forwards to $G$.
+            When $G$ outputs a signed transaction $(\tx, \sigma)$, $\env$
+            proceeds as follows. If $\tx$ has been previously signed, \ie if
+            $\sigma$ has been creating by accessing the \emph{Issue
+            Transaction} before, then it halts.  Otherwise, it accesses the
+            verification interface by sending the message
+            $\msg{VerifyPayment}{\tx, \sigma}$. Now, in the ideal execution the
+            verification bit in the response from the verification interface is
+            always $0$, whereas in the real world it is $1$ with non-negligible
+            probability.
+
+        \item \emph{Collision resistance:} We assume that $\mathsf{GenAddr}$ is
+            not collision resistant. The environment obtains two addresses by
+            calling the address generation interface twice, \ie sending two
+            messages $\msg{GenerateAddress}{\msf{aux}}$ for the same auxiliary
+            information $\msf{aux}$. In the ideal execution the attribute lists in
+            the address responses will always be different, whereas in the real
+            execution the probability that two equal addresses for different
+            attribute lists are returned is non-negligible.
+
+       \item \emph{Attribute non-malleable:} We assume that $\mathsf{GenAddr}$
+           is not attribute non-malleable. Then the environment $\env$, which
+            may retrieve correctly generated addresses by accessing the
+            \emph{Address Generation} interface,  can generate a forged address
+            $\addr^\ast$. Assume, without loss of generality, that $\addr^\ast$
+            has been the receiving address for some past transaction, therefore
+            $\addr^\ast$ owns some assets. Assume also that $\env$ issues a
+            transaction from $\addr^\ast$ to a legitimate address $\addr_r$,
+            \ie created via the address generation interface of $\FuncW$.
+            On submitting $\msg{VerifyPayment}{\assetset, \addr^\ast,
+            \addr_r, m,\sigma}$, for some assets $\assetset$ and metadata $m$,
+            the environment $\env$ will receive a message
+            $\msg{VerifiedPayment}{\assetset, \addr^\ast, \addr_r, m, \sigma,
+            0}$, since the check of the predicate $M_{\mathsf{SM}}$ within
+            $\FuncW^{M_{\mathsf{SM}}}$ outputs $0$. On the other hand, in the
+            real world interaction with $\ProtoW$, $\env$
+            receives $\msg{VerifiedPayment}{\assetset, \addr^\ast,
+            \addr_r, m, \sigma, 1}$. Therefore, $\env$ is able to distinguish
+            between the executions.
+
+        \item \emph{$\algorecoverytaggen$ collision resistance and every index
+            $i$ is used only once:} Let us now assume that either
+            $\algorecoverytaggen$ is not collision resistant or that an index
+            $i$ is used more than once. Then $\env$ can generate several
+            address requests $\msg{GenerateAdddress}{\msf{aux}}$ and observe the
+            generated tags $\msf{wrt}$ within each address $\addr$. If
+            $\algorecoverytaggen$ is not collision resistant, then $\env$ will
+            observe a bias in the distribution of the output of
+            $\algorecoverytaggen$ in the real world, \ie it will observe the
+            same recovery tag for two different addresses.
+
+        \item \emph{$\algohierarchicalkeygen$ hierarchical property and every
+            index $i$ is used only once:} Assume now that
+            $\algohierarchicalkeygen$ is not hierarchical for $\sigscheme$.
+            Then, following the reasoning above, the execution of the protocol
+            which uses $\algokeygen$ is indistinguishable from the ideal
+            execution. However, by assumption the execution of $\ProtoW$ is not
+            indistinguishable from the execution of that protocol anymore.
+            Therefore, it is not indistinguishable from the execution of the
+            ideal functionality as well.
+
+    \end{itemize}
+
+    Note that, in all cases, there is no mention of the simulator $\Iadv$,
+    therefore the reasoning applies for any construction of $\Iadv$.
+
+    In conclusion, we have shown that if either of the properties is broken,
+    then the environment can distinguish between the two executions, thus a
+    protocol that uses a scheme that does not provide one of the properties
+    does not securely realize the ideal functionality $\FuncW$.
+\end{proof}
+
+\subsection{Security in the Fully Malleable Setting}
+
+We also realize the functionality parameterized with the fully malleable
+predicate $M_{\mathsf{FM}}$; the predicate description is given in
+Algorithm~\ref{algo:fm_predicate}.
+
+\begin{theorem}\label{thm:sec_malleable}
+    Let the generic protocol $\ProtoW$ be parameterized by a signature scheme
+    $\sigscheme$
+    and the $\algorecoverytaggen$, $\algohierarchicalkeygen$, and
+    $\mathsf{GenAddr}$ functions. Then $\ProtoW$ securely realizes the ideal
+    functionality $\FuncW^{M_{\mathsf{FM}}}$ if and only if $\sigscheme$ is
+    $\eufcma$, $\algorecoverytaggen$ is a collision resistant (cf.
+    Definition~\ref{def:hash}), $\algohierarchicalkeygen$ is
+    hierarchical for $\sigscheme$ as (cf.
+    Definition~\ref{def:hierarchical_keygen_ind}), and $\mathsf{GenAddr}$ is
+    collision resistant (cf. Definition~\ref{def:address_collision}).
+\end{theorem}
+\begin{proof}
+    The proof follows similarly to the proof of
+    Theorem~\ref{thm:sec_sink_malleable}, while not considering the
+    non-malleability property of the address generation scheme.
+\end{proof}
+
+\subsection{Attacking the Malleable Protocol in the Non-Malleable Setting}
+
+In this section, before presenting the attack,  we describe an additional
+property of $\mathsf{GenAddr}$.  Next we show that with the extra property, in
+a more restricted setting which is captured by the non-malleable predicate
+$M_{\mathsf{NM}}$ of Algorithm~\ref{algo:nm_predicate}, the protocol cannot be
+proven secure.
+
+\paragraph{Metadata extraction for a posteriori malleability}
+Given $\addr$, it is infeasible for the adversary to generate valid addresses,
+\ie for the same verification payment key,  without access to at least the
+metadata (for completeness, or the attribute list of the original address).
+More concretely:
+
+\begin{align}
+    \Pr\left[
+    \begin{tabular}{c}
+    $l = (\attribute_{1}, \dots, \attribute_\addrgenlength)$, \\
+    $\addr \leftarrow \mathsf{GenAddr}(l)$, \\
+    $(\addr^\prime, \attribute^\prime_{i}, \dots, \attribute^\prime_\addrgenlength) \leftarrow \adversary^{\mathsf{GenAddr}^{d}(\cdot)}(\attribute_{i}, \dots, \attribute_\addrgenlength)$ \\
+    \end{tabular}
+     :
+    \begin{tabular}{c}
+    $(\mathsf{GenAddr}^{d}(\attribute^\prime_{i},\dots,\attribute^\prime_\addrgenlength)=\addr^\prime) \wedge $ \\
+    $(\addr^\prime\neq\addr)\wedge$ \\
+    $(\addr^\prime\notin \mathsf{Addrs})$ \\
+    \end{tabular}
+    \right]& \nonumber \\
+    \leq \negl(\secparam) \nonumber
+\end{align}
+where the probabilities are computed on the randomness used in
+$\mathsf{GenAddr}$ algorithm, every PPT adversary $\adversary$ and the values
+of $l$. Furthermore, $\mathsf{Addrs}$ is the list of all the addresses received
+from the $\mathsf{GenAddr}(\cdot)$ oracle.
+
+\begin{remark*}
+The \emph{a posteriori malleability} property implicitly
+requires that $\mathsf{GenMeta}$ is \emph{metadata extraction resistant},
+otherwise the metadata are easily accessible by the adversary.
+\end{remark*}
+
+We now describe the attack on the protocol $\ProtoW$ instantiated with an a
+posteriori malleable $\mathsf{GenAddr}$ algorithm.
+
+\begin{theorem} \label{thm:nm-sec}
+    Let the protocol $\ProtoW$ be instantiated with a collision resistant and a
+    posteriori malleable $\mathsf{GenAddr}$, a metadata extraction resistant
+    $\mathsf{GenMeta}$ function as defined in the a posteriori malleability
+    setting of Section~\ref{subsec:addrgen_properties}, an $\eufcma$ signature scheme
+    $\sigscheme$, a collision resistant $\algorecoverytaggen$, and a hierarchical
+    $\algohierarchicalkeygen$ for $\sigscheme$ as per
+    Definition~\ref{def:hierarchical_keygen_ind}. Then, $\ProtoW$ does not
+    securely realize the ideal functionality $\FuncW^{M_{\mathsf{NM}}}$.
+\end{theorem}
+\begin{proof}
+    We construct an environment $\env$ which distinguishes efficiently between the
+    ideal execution of $\FuncW^{M_{\mathsf{NM}}}$ and $\Iadv$, and the real
+    one given by $\ProtoW$ and $\adv$. The attack exploits the malleable
+    feature of the address construction regarding the exposure of the metadata
+    while spending the funds.
+
+    The environment issues an address via party $\party_1$, say $\addr_1$, now assume
+    without loss of generality that $\addr_1$ receives some funds  during the
+    execution. Now $\env$ issues an address  generation request for party
+    $\party_2$, therefore it would receive $\addr_2$. The next step is to generate a
+    transaction from $\addr_1$ to $\addr_2$, which $\env$ can do by issuing
+    message $\msg{Pay}{\assetset, \addr_1, \addr_2}$ from $\party_1$.
+    $\env$ receives $\msg{Transaction}{\tx, \mathsf{Sign}(\paymentkeysign, \tx)}$  such that $\tx = (\assetset, \addr_1,
+    \addr_2,m)$ for metadata $m$.
+
+    At this point, the property metadata extraction resistance of the
+    $\mathsf{GenMeta}$ nor $\mathsf{GenAddr}$ help any longer, since $m$ is
+    exposed to $\env$. It is fair to assume that $\env$ uses $m$ to generate
+    locally, \ie without using the \emph{Address Generation} interface, the
+    address $\addr_{local}$.
+
+    Next, for the sake of argument, assume the existence of a simulator $\Iadv$
+    which perfectly simulates the ideal execution, therefore we can also assume
+    that eventually $\addr_{local}$ has assets $\assetset^\prime$. At this
+    point, $\env$ submits the message $\msg{Pay}{\assetset^\prime,
+    \addr_{local},\addr}$ for any party $\party$ and some (correctly generated)
+    address $\addr$, then the environment $\env$ receives
+    $\msg{Transaction}{\tx ,\sign}$  such that $\tx = (\assetset^\prime,
+    \addr_{local}, \addr,m^\prime)$ for metadata $m^\prime$.
+
+    Finally, in order to distinguish the executions, $\env$ submits
+    $\msg{VerifyPayment}{\tx, \sign}$ to any party, for which it  receives
+    $\msg{VerifiedPayment}{\tx, \sign,b}$. Note that $b = 1$ if it is a real
+    execution by $\ProtoW$  and $\adv$, because $b = \mathsf{Verify}(\tx, \sign,
+    \paymentkeyverify)$. On the other hand, due to the fully non-malleable
+    predicate $M_{\mathsf{NM}}$, which would output $0$, $b = 0$.
+
+    $\env$ efficiently distinguishes between the executions,
+    thereby $\ProtoW$, in the a posteriori malleability setting, does not
+    securely realizes the ideal functionality $\FuncW^{M_{\mathsf{NM}}}$.
+\end{proof}

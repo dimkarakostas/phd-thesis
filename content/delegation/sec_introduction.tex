@@ -1,0 +1,93 @@
+Blockchain protocols based on the Proof-of-Stake (PoS) paradigm depend --- by
+nature --- on the active participation of stakeholders.  Specifically, in PoS,
+the set of potentially eligible parties is comprised of ``stakeholders'', \ie
+parties who own some amount of the digital assets which are maintained by the
+ledger.  Importantly, this set is open, \ie parties can arbitrarily join and
+leave, while also remaining pseudonymous.  Therefore, the eligible party,
+dubbed the ``minter'', is selected proportionally to its stake, \ie the amount
+of assets that it owns; the details of this selection process have resulted in
+a number of PoS flavors and protocols.
+
+However, the inherent {\em duality} of PoS digital assets, which can both be
+transferred between entities and used in the protocol's execution, diverges
+from the Proof-of-Work (PoW) setting and might result in users abstaining from
+engaging in the PoS mechanism.  The stakeholders are expected to consistently
+follow the protocol's execution, by checking whether they are eligible to
+participate, and, in those cases and within a specific time frame, engage in
+transaction processing per the PoS protocol's rules~\cite{C:KRDO17,EPRINT:CGMV18,EPRINT:GHMVZ17,vasin2014blackcoin}. This
+feature is in sharp contrast with PoW protocols, which offer a natural
+decoupling between the consensus layer participants who generate blocks, \ie
+the \emph{miners}, and the users of the system who issue transactions.
+Naturally, the set of users subsumes the miners, since \eg the miners collect
+fees and may also transact using them, and a substantial number of users do not
+participate in the consensus protocol.
+
+This dual nature of PoS assets raises two major considerations. First, some
+secret, key-related information is frequently used on behalf of an asset, thus
+potentially revealing critical information that weakens the asset's security or
+increase the attack surface against a user's wallet. For instance, in the UTxO
+model (implemented by Bitcoin), the public key which controls the assets is
+published only upon spending them; however, PoS systems cannot adapt this model
+directly, since the public key is revealed when participating in the protocol,
+\ie (typically) before spending the funds. Therefore, using the same key for
+all operations both increases the attack surface against it and introduces
+quantum attacks, given that most implementations employ non-post-quantum secure
+signature schemes.  Second, a computational and availability requirement is
+imposed on the stakeholders; therefore, in an environment where the majority of
+users are often offline and abstain from the protocol's execution, the security
+guarantees of the ledger are weakened.
+
+The above issues are well-known and have already been informally considered by
+the blockchain community. For instance, some schemes propose a separation
+between a staking and a payment key to address the first
+consideration\footnote{One such discussion is available at:
+\url{https://www.reddit.com/r/ethereum/comments/6idf2c}}.  The second
+consideration, although seemingly unavoidable given the nature of PoS
+protocols, can be countermeasured by enabling the delegation of the PoS
+protocol participation rights, \ie block generation and transaction validation.
+This mechanism would allow users to organize in ``stake pools'', \ie
+consortiums managed by a single user, the pool ``leader'', who participates in
+the PoS protocol on behalf of all members. Stake pools bring efficiency
+advantages, since the set of stake pool leaders is (typically) smaller than the
+entire stakeholders' set. Given that some PoS protocols~\cite{C:KRDO17} are
+based on multi-party computation, introducing a \emph{committee} of pool
+leaders substantially reduces the computational and communication complexity
+overhead.
+
+Interestingly, PoS implementations don't typically address these concerns
+comprehensively. On the one hand, ``delegated PoS'', \eg in Steem~\cite{steem}
+and EOS~\cite{eosWhitepaper}, attempts to address the second consideration by
+enabling the voting of delegates. However, both systems use a single key for
+payment and voting, thus failing to address the first consideration.  On the
+other hand, systems like NEO~\cite{neo-consensus}, as of September 2020, enabled
+only $7$ consensus nodes, $5$ of which are controlled by a single entity,
+whereas the only way of participating in the consensus mechanism is via central
+approval. Finally, Decred~\cite{decred} uses a ticketing system, \ie
+stakeholders buy a ticket to participate in the protocol, which is akin to
+using a separate key; however, it requires the locking of funds while staking,
+\ie it does not allow concurrent payments and staking, a major blow to the
+system's usability.
+
+Evidently, even though practical solutions do exist, a comprehensive and formal
+treatment of a PoS system's account management is less well-researched. In
+fact, due to the very little systematization of the PoS wallets' security and
+the lack of concise guidelines, developers often resolve to ad hoc solutions.
+Given that PoS systems are increasingly gaining momentum, it is imperative that
+this problem receives a thorough and formal treatment. The results of this
+chapter fill this gap by acting as a guideline for system architects and
+developers, aiming to better wallet implementations in terms of safety, as well
+as enable robust designs with improved performance.  A further important
+motivation behind our work is the current low level of decentralization in PoS
+systems. As illustrated above, some projects are yet to allow stakeholders to
+practice staking, opting instead for a closed set of block producing nodes.
+Even in cases where stakeholders are arguably in control of their stake, they
+may choose their stake representatives from a very narrow set of accounts; for
+instance, the EOS block producing nodes are only $21$ at any given time. Our
+work aims at alleviating such centralization tendencies by enabling every user
+to either participate on their own or assign their stake to any delegate of
+their choice.  Consequently, the formalization of the PoS wallet is a stepping
+stone for future research, given that the wallet is the gateway through which
+users interact with the system, and a core element of the consensus protocol
+itself.  As a result, the composable nature of our framework allows future
+research to employ it without composability concerns about its underlying
+implementation.

@@ -1,0 +1,429 @@
+\section{PoS Addresses: Construction and Recovery}\label{sec:address}
+
+The final step in fully realizing the core wallet is to implement the functions
+used by the protocol $\ProtoW$, more importantly the address generation
+function. In the following paragraphs, we outline the three types of addresses
+in our framework, \ie \emph{base}, \emph{pointer}, and \emph{exile}. We
+concretely describe an address's attributes and how an index is used to
+generate a ``child'' address. Then, we present multiple address schemes, each
+offering different levels of protection against malleability attacks, resulting
+in different address lengths, but all easily implementable with standard
+cryptographic primitives.
+
+\subsection{Address Types and their Attributes}\label{subsec:address-attributes}
+
+As discussed above, at least two attributes are required per address, \ie the
+staking $\stakingkeypair$ and the payment $\paymentkeypair$ key pairs. As shown
+in Section~\ref{sec:basicdef}, the signing keys $\stakingkeysign$ and
+$\paymentkeysign$ are \emph{private}, while the verification keys
+$\paymentkeyverify$ and $\stakingkeyverify$ are \emph{semi-public} and
+\emph{public} attributes respectively. We remind that $\paymentkeypair$ is used
+in proving ownership of the assets and issuing payments, whereas
+$\stakingkeypair$ is used to perform staking actions on behalf of the assets.
+
+The first step in computing a ``child'' address and its attributes is the
+choice of an index $i$ from the set $\indexSet$. As with hardware wallets
+(Chapter~\ref{chap:hardware-wallets}), an index is an identifier that is used
+to generate a ``child'' key. We define a list of domains $[ \indexSet_1,
+\indexSet_2, \ldots, ]$, where each $\indexSet_i$ has a finite, relatively
+small, cardinality. During address generation, the wallet initially picks
+indexes from $\indexSet_1$. After all indexes in $\indexSet_1$ have been
+used, it uses $\indexSet_2$ and so on. It is required that at least one
+address for an index in $\indexSet_j$ is published on the ledger, \ie is on
+the sending or receiving end of a transaction, before indexes from
+$\indexSet_{j+1}$ are used. During recovery, the wallet sets $j = 1$ and
+generates all indexes in $\indexSet_j$. It then constructs the recovery tag
+for each index and compares it with each address in the blockchain. If at least
+one index has been used in a published address, then the wallet sets $j = j +
+1$ and repeats for $\indexSet_{j+1}$. When, for some $j$ no index corresponds
+to any published address, recovery is complete.
+
+We now discuss the complexity of the recovery procedure. Given that the
+cardinality of $\indexSet$ is small, the probability that the same index is
+chosen twice, even for a random choice, is not negligible. Therefore, two
+devices that maintain the same wallet core would need to share the state of the
+indexes that have been used by each. The number of indexes and addresses that
+the wallet can generate is not restricted, since the set of domains is
+infinite. In terms of complexity, this naive scheme is linear to the number of
+addresses in the ledger. We can improve this with an index of published
+addresses, based on their recovery tag. Using such index, the recovery
+complexity becomes linear to the cardinality of
+$\bigcup\limits_{{\scriptscriptstyle j}} \indexSet_j$, \ie the number of
+addresses that the wallet owns and has published. Since the recovery tags are
+public, such index can be constructed and circulated on the network by
+everybody.
+
+A hierarchical key, which is derived from the wallet's master key
+$\masterprivkey$ and is linked to a child address, is created by
+$\algohierarchicalkeygen$. This function takes the master key, a label
+$\texttt{lbl} \in \{ \msf{payment}, \msf{staking} \}$ and an index $i$ and
+passes them to a pseudorandom function, which outputs a pseudorandom value
+passes it to a pseudorandom number generator that outputs $\poly(\secparam)$
+bits $\rho$, for some suitable polynomial $\poly$. These bits are then passed
+as random coins to the key generation function $\algokeygen(1^\secparam;
+\rho)$. Therefore, to generate a child payment key, the protocol runs
+$\algohierarchicalkeygen(\langle \masterprivkey, \msf{payment}, i \rangle)$, while
+similarly $\texttt{lbl} = \msf{staking}$ is used to issue a new staking
+key.
+
+The wallet produces three types of addresses, differentiated by the staking
+object $\beta$. To produce a \emph{base} address, the wallet computes a staking
+key $\stakingkeyverify$ and sets $\beta$ as the hash of it. For a
+\emph{pointer} address, the address's staking key is set indirectly.
+Specifically, the staking object $\beta$ is a delegation pointer $ptr$. The
+pointer is a string that identifies a published certificate, \ie the
+representation of a staking action on the ledger, which is described in detail
+in Section~\ref{sec:delegation-transaction}. If $ptr$ points to a valid
+delegation certificate $\tau_{del}$, then the address's staking key is the
+delegate's key in $\tau_{del}$, whereas, if $ptr$ points to a registration
+certificate, then the delegate's key is the key of the stake pool defined in
+that certificate.  Finally, for an \emph{exile} address, the staking object is
+a fixed value $\epsilon = \bot$. Since $\epsilon$ does not identify a staking
+key, the owner of an exile address cannot perform staking actions or delegate
+the address's staking rights, so all assets owned by such addresses are
+effectively removed from the PoS protocol.
+
+Each address also contains the recovery tag $\msf{wrt}$, \ie a public parameter which
+allows the identification of addresses. The tag is created by the function
+$\algorecoverytaggen$ and links the address to the attribute list, without
+revealing the semi-public attributes.  Recovery is a process that relies only
+on the master key of the wallet, so the wallet should be able to recover an
+address by \emph{only knowing its payment key}. In the simplest setting, during
+recovery the wallet computes the keys for its indexes and hashes them to
+compute the recovery tags. Therefore, $\algorecoverytaggen$ is the hash
+function $\hash$ and, by definition, is collision resistant as required.
+
+\paragraph{Searchable recovery}\label{subsubsec:searchable_tags}
+This design builds on the premise of searchable encryption
+\cite{C:BelBolONe07}. Specifically, access to the wallet's master key enables
+searching all addresses in the ledger and recognize the ones that belong to the
+wallet.  Assuming an instance of a semantically secure symmetric encryption
+scheme $\langle \mathsf{Enc, Dec} \rangle$, the hierarchical tag generation
+function $\mathsf{SearchableTagGen}$ computes the output of $\mathsf{Enc}$,
+using $\masterprivkey$ as the encryption key and the index $i$ as the plaintext:
+\begin{align}
+    \mathsf{sht} = \mathsf{Enc}(\masterprivkey, i)
+\end{align}
+During recovery, the wallet parses all addresses in the blockchain and decrypts
+the tag $\mathsf{sht}'$ in each as $i^\prime = \mathsf{Dec}(\masterprivkey, \mathsf{sht}')$. If
+the output is a well-formed index $i' \in \mc{I}$, the address
+belongs in the wallet and its hierarchical index is $i'$. Since the
+output of the encryption function $\mathsf{Enc}$ is by definition random in the
+domain of $\mathsf{Enc}$, the recovery tag generation is a PRF as needed.
+
+\paragraph{Malleability verification tags}\label{subsubsec:verifiable_malleability_tags}
+These tags are used to verify whether a part of the address
+has been altered during transit. Specifically, the motivation is for the
+address owner to identify whether a malleability attack has occurred, even in
+case the transaction is accepted by the system.  The tag is computed as
+follows:
+\begin{align}
+    \mathsf{mht} = \hash(\masterprivkey || i || \beta)
+\end{align}
+where $\beta$ is the staking attribute, for which the wallet needs to identify
+possible malleability attacks. Clearly the tag generation is again a
+pseudorandom function. Also, without the master key $\masterprivkey$, an attacker cannot
+forge such tag. However, only the wallet owner can verify that such tag is
+properly constructed for a given address, \ie it is not sufficient to construct
+non-malleable address schemes.
+
+\subsection{Malleable Addresses}\label{subsubsec:malleable_addrgen}
+
+As discussed in Section~\ref{subsec:addrgen_properties}, The two basic
+properties of an address generation function are \emph{collision resistance}
+and \emph{non-malleability}. On the one hand, collision resistance is a
+feature that has been extensively investigated in the literature. On the other
+hand, address non-malleability, in the manner presented in this chapter, is a
+novel notion.  Therefore, let us first present a malleable scheme and the
+problems that stem from it.
+
+Suppose two users $\party_{A}$ and $\party_{B}$. $\party_{B}$ wishes to receive
+some assets from $\party_{A}$, so she generates an address $\addr$ and gives it
+to $\party_{A}$; the payment key of $\addr$ is $\paymentkeyverify$ and the
+staking object is $\beta$. If the address generation function is malleable,
+$\party_{A}$ can create an address $\addr'$, where the payment key is again
+$\paymentkeyverify$ but the staking object is $\beta'$. Notice that
+$\party_{A}$ only knows the address $\addr$, \ie neither the payment key
+$\paymentkeyverify$ nor any other information, \eg other addresses that
+$\party_{B}$ owns. Now, $\party_{B}$ can spend from $\addr^\prime$, so
+$\party_{A}$ can claim that the payment is valid and complete, even though
+$\party_{A}$ has effectively chosen the key that controls that stake. To make
+matters worse, the malleability attack may go unnoticed by $\party_{B}$, unless
+she keeps a state of her generated addresses and compares with the forged one.
+
+A malleable address is constructed by concatenating the hash of the
+verification payment key $\paymentkeyverify$ and the staking object $\beta$, so
+$\addr = \hash(\paymentkeyverify) || \beta$. The value
+$\hash(\paymentkeyverify)$ acts as both the association of the address with the
+payment key and the wallet recovery tag $\msf{wrt}$. The staking object $\beta$ takes
+the following forms, depending on the type of address:
+\begin{inparaenum}[i)]
+    \item \emph{base:} $\beta = \hash(\stakingkeyverify)$;
+    \item \emph{pointer:} $\beta = \mathsf{getPointer}(\stakingkeyverify)$;
+    \item \emph{exile:} $\beta = \epsilon$.
+\end{inparaenum}
+The malleable address generation function is defined in
+Algorithm~\ref{alg:malleable_addrgen}, while
+Lemma~\ref{lem:malleable_addrgen_collision} shows that $\mathsf{MGenAddr}$ is
+collision resistant.
+
+\begin{algorithm}
+    \begin{algorithmic}
+        \Function {$\mathsf{MGenAddr}$}{$\addressgenlist$}
+            \State $(\msf{aux}, st, \paymentkeyverify) = \mathsf{parse}(\addressgenlist)$
+            \Switch {$\msf{aux}$}
+                \Case {$\msf{base}$}
+                    \State $\beta = \hash(\stakingkeyverify)$
+                \EndCase
+                \Case {$\msf{pointer}$}
+                    \State $\beta = \mathsf{getPointer}(\stakingkeyverify)$
+                \EndCase
+                \Case {$\msf{exile}$}
+                    \State $\beta = \epsilon$
+                \EndCase
+            \EndSwitch
+            \State $\addr = \hash(\paymentkeyverify) || \beta$
+            \State \Return $\addr$
+        \EndFunction
+    \end{algorithmic}
+    \caption{
+        The malleable address generation function, parameterized by
+        $\hash(\cdot)$. The input is a tuple $\addressgenlist$, consisting of
+        the auxiliary information $\msf{aux}$ and the attributes.
+    }
+    \label{alg:malleable_addrgen}
+\end{algorithm}
+
+\begin{lemma}\label{lem:malleable_addrgen_collision}
+    $\mathsf{MGenAddr}$ is collision resistant if $\hash$ is collision
+    resistant.
+\end{lemma}
+\begin{proof}
+    The proof is by contradiction. Suppose an adversary produces two attribute
+    lists $l_1 = (\msf{aux}_1, \attribute_1, \paymentkeyverify_1)$, $l_2 =
+    (\msf{aux}_2, \attribute_2, \paymentkeyverify_2)$, such that $l_1 \neq l_2$, which
+    correspond to the addresses $\addr_1 = \mathsf{MGenAddr}(l_1) =
+    \hash(\paymentkeyverify_1) || \beta_1$ and $\addr_2 =
+    \mathsf{MGenAddr}(l_2) = \hash(\paymentkeyverify_2) || \beta_2$.
+
+    If the adversary finds a collision of addresses, then $\addr_1 = \addr_2$
+    and it also holds that $\hash(\paymentkeyverify_1) =
+    \hash(\paymentkeyverify_2)$ and $\beta_1 = \beta_2$. However, by assumption
+    it holds that $l_1 \neq l_2$, so it also holds that $\paymentkeyverify_1
+    \neq \paymentkeyverify_2$ and the adversary has found a collision for
+    $\hash$.
+\end{proof}
+
+$\mathsf{MGenAddr}$ is malleable since, for every address $\addr =
+\hash(\paymentkeyverify) || \beta$ that $\party_{B}$ gives to $\party_{A}$,
+$\party_{A}$ can create a new address as $\addr^\prime =
+\hash(\paymentkeyverify) || \beta^\prime$ for some staking object $\beta^\prime
+\neq \beta$. Also, $\party_{B}$ cannot identify a forgery without keeping track
+of the addresses that she has honestly generated. However, this is not always
+feasible, \eg wallet recovery, when the wallet owner knows the payment keys but
+does not necessarily keep track of the staking object for each address in the
+wallet.
+
+\paragraph{Verifiably malleable addresses}
+This scheme is similar to the above, with the addition that the wallet can
+identify a forgery.  The address $\addr$ is now constructed by concatenating
+the string generated by $\mathsf{MGenAddr}$, as before, and the malleability
+verification tag, which is constructed as in
+Section~\ref{subsubsec:verifiable_malleability_tags}:
+\begin{align}
+    \mathsf{mht} = \hash(\masterprivkey || i || \beta) \\
+    \addr = \hash(\paymentkeyverify) || \beta || \mathsf{mht}
+\end{align}
+
+This scheme is also susceptible to the malleability attack described above,
+since, given $\addr = \hash(\paymentkeyverify) || \beta || \mathsf{mht}$, $\adversary$
+can create a forgery like $\addr' = \hash(\paymentkeyverify) || \beta'
+|| \mathsf{mht}$. However, now the owner of the wallet can compare the staking object
+$\beta'$ with the tag $\mathsf{mht}$ and identify the attack, while also using
+$\hash(\paymentkeyverify)$ as the recovery tag.
+
+\subsection{A Posteriori Malleable Addresses}\label{subsec:non_malleable_addrgen}
+
+In this section we describe various schemes of a posteriori malleable address
+generation. First, Algorithm~\ref{alg:apost-addrgen} defines an a posteriori
+verifiable malleable address generation function $\mathsf{PNMGenAddr}$.
+
+\begin{algorithm}
+    \begin{algorithmic}
+        \Function {$\mathsf{PNMGenAddr}$}{$\addressgenlist$}
+            \State $(\msf{aux}, \stakingkeyverify, \paymentkeyverify, \msf{ht}) = \mathsf{parse}(\addressgenlist)$
+            \Switch {$\msf{aux}$}
+                \Case {$\msf{base}$}
+                    \State $\beta = \hash(\stakingkeyverify)$
+                \EndCase
+                \Case {$\msf{pointer}$}
+                    \State $\beta = \mathsf{getPointer}(\stakingkeyverify)$
+                \EndCase
+                \Case {$\msf{exile}$}
+                    \State $\beta = \epsilon$
+                \EndCase
+            \EndSwitch
+            \State $\msf{root} = \hash(\paymentkeyverify || \msf{ht} || \beta)$
+            \State $\addr = \msf{root} || \msf{ht} || \beta$
+            \State \Return $\addr$
+        \EndFunction
+    \end{algorithmic}
+    \caption{
+        A posteriori malleable address generation function, parameterized
+        by $\hash(\cdot)$. The input is a tuple $\addressgenlist$, consisting
+        of the auxiliary information $\msf{aux}$ and the attributes.
+    }
+    \label{alg:apost-addrgen}
+\end{algorithm}
+
+In this case, $\adversary$ cannot act as above. Specifically, if $\adversary$
+changes $\beta$ to some $\beta^\prime$, without changing $\msf{root}$, then, upon
+spending from the address, $\msf{root}$ will be invalid. Since $\adversary$ does not
+know $\paymentkeyverify$, it cannot construct a valid $\msf{root}$ for both
+$\paymentkeyverify$ and $\beta'$, unless explicitly asking $\party_{B}$ for
+such address. Alternatively, if she only changes $\msf{root}$ and keeps $\beta$, it
+can be easily found that $\msf{root} \neq \hash(\paymentkeyverify || \msf{ht} || \beta)$,
+so the payment is rejected and the assets are effectively burnt in the
+malformed address. We note that tag $\msf{ht}$ is necessary, since $\msf{root}$ includes
+the staking object, so a wallet that knows only the payment key could not
+recreate it during recovery.
+
+However, this scheme allows for a posteriori malleability, as defined in
+Section \ref{subsec:malleability_predicate}. Specifically, $\adversary$ can
+perform the attack if she knows a past key of the wallet, for which she wishes
+to generate the forged address. In this case, both the wallet recognizes
+the forged address as its own and the owner is able to spend from it.
+
+Finally, as with the malleable addresses, this scheme can be transformed into a
+verifiable one via a verification tag. The tag would be $\msf{ht} = (\msf{ht}_1, \mathsf{mht})$,
+where $\msf{ht}_1$ is the recovery tag, for either a predefined index $\msf{iht}$ or a
+searchable one $\mathsf{sht}$, and $\mathsf{mht}$ is the malleability verification tag.
+
+\subsection{Sink Malleable Addresses}\label{subsec:nm-genaddr}
+
+Our final address scheme is a sink malleable construction. The core idea is to
+certify the staking object with the payment key; thus, to produce a forgery,
+the adversary needs to forge a payment key's signature. A sink malleable
+address is as follows:
+\begin{align}
+    \addr = \hash(\paymentkeyverify) || \beta || \algosign(\paymentkeysign, \beta)
+\end{align}
+The value $\hash(\paymentkeyverify)$ associates the address with the payment
+key, while also serving as the recovery tag $\msf{wrt}$. The staking object $\beta$
+for the three address types is:
+\begin{inparaenum}[i)]
+    \item \emph{base:} $\beta = \hash(\stakingkeyverify)$;
+    \item \emph{pointer:} $\beta = \mathsf{getPointer}(\stakingkeyverify)$;
+    \item \emph{exile:} $\beta = \epsilon$.
+\end{inparaenum}
+
+In practice, upon issuing a transaction and revealing the payment key
+$\paymentkeyverify$, everybody can check the signature to identify forgeries.
+Algorithm~\ref{alg:sink_addrgen} formally defines the sink malleable
+construction, while Lemmas~\ref{lem:sink_addrgen_collision}
+and~\ref{lem:sink_addrgen_attribute_mall} prove that our scheme is both
+collision resistant and non-malleable.
+
+\begin{algorithm}
+    \begin{algorithmic}
+        \Function {$\mathsf{SinkGenAddr}$}{$\addressgenlist$}
+            \State $(\msf{aux}, st, \paymentkeyverify, \paymentkeysign) = \mathsf{parse}(\addressgenlist)$
+            \Switch {$\msf{aux}$}
+                \Case {$\msf{base}$}
+                    \State $\beta = \hash(st)$
+                \EndCase
+                \Case {$\msf{pointer}$}
+                    \State $\beta = \mathsf{getPointer}(st)$
+                \EndCase
+                \Case {$\msf{exile}$}
+                    \State $\beta = st$
+                \EndCase
+            \EndSwitch
+            \State $\addr = \hash(\paymentkeyverify) || \beta || \algosign(\paymentkeysign, \beta)$
+            \State \Return $\addr$
+        \EndFunction
+    \end{algorithmic}
+    \caption{
+        The sink malleable address generation function, parameterized by a hash
+        $\hash(\cdot)$ and a signature scheme $\sigscheme$. The input is a
+        tuple $\addressgenlist$, consisting of the auxiliary information $\msf{aux}$
+        and the attributes.
+    }
+    \label{alg:sink_addrgen}
+\end{algorithm}
+
+\begin{lemma}\label{lem:sink_addrgen_collision}
+    $\mathsf{SinkGenAddr}$ is collision resistant if $\hash$ is collision
+    resistant.
+\end{lemma}
+
+\begin{proof}
+    Let $l_1 = (\msf{aux}_1, st_1, \paymentkeyverify_1,
+    \paymentkeysign_1)$, $l_2 = (\msf{aux}_2, st_2, \paymentkeyverify_2,
+    \paymentkeysign_2)$ be two attribute lists, $l_1 \neq l_2$, corresponding to
+    addresses $\addr_1 = \mathsf{MGenAddr}(l_1) =
+    \hash(\paymentkeyverify_1) || \beta_1 ||
+    \algosign(\paymentkeysign_1, \beta_1)$ and $\addr_2 =
+    \mathsf{MGenAddr}(l_2) = \hash(\paymentkeyverify_2) || \beta_2 ||
+    \algosign(\paymentkeysign_2, \beta_2)$.
+
+    If $\addr_1 = \addr_2$ then it also holds that $\hash(\paymentkeyverify_1)
+    = \hash(\paymentkeyverify_2)$, $\beta_1 = \beta_2$, and
+    $\algosign(\paymentkeysign_1, \beta_1) = \algosign(\paymentkeysign_2,
+    \beta_2)$. However, by assumption we have $l_1 \neq l_2$, so it also holds
+    that $\paymentkeyverify_1 \neq \paymentkeyverify_2$ and thus the adversary
+    has found a collision for $\hash$ on the two values of the payment
+    verification keys and signatures on the staking object.
+\end{proof}
+
+\begin{lemma}\label{lem:sink_addrgen_attribute_mall}
+    $\mathsf{SinkGenAddr}$, when parameterized with a signature scheme
+    $\Sigma$, is attribute non-malleable if $\Sigma$ is $\eufcma$.
+\end{lemma}
+
+\begin{proof}
+    Assume the key pair $(\paymentkeyverify,\paymentkeysign)$ and the address
+    $\addr = \hash(\paymentkeyverify) || \beta || \algosign(\paymentkeysign,
+    \beta)$, for staking object $\beta$.
+    Also assume the existence of an adversary $\adversary$ who breaks the
+    attribute non-malleability property of $\mathsf{SinkGenAddr}$. We will
+    construct a forger $F$ for the signature scheme, which simulates the
+    security game for $\adversary$. The forger works as follows.
+    $F$ receives a key $\paymentkeyverify$ and has access to the signing
+    oracle. It sets the attribute list $l = (\paymentkeyverify, \msf{aux}, \beta,
+    \msf{wrt})$ and initializes $\adversary$ with public attributes $(\msf{aux}, \beta,
+    \msf{wrt})$.  Note that $F$ answers generation address queries by using its own
+    signature oracle. That is, upon receiving $(\msf{aux}_i, \beta_i, \msf{wrt}_i)$, it
+    issues a signature query on $\beta_i$ and generates a new address
+    $\addr_i$.  Moreover, $F$ may receive a metadata query on issued addresses
+    $\addr_{i}$ and answer by revealing $\paymentkeyverify$.
+    By hypothesis $\adversary$ outputs a list $(\addr^\ast, \msf{aux}^\ast,
+    \beta^\ast, \msf{wrt}^\ast)$, as per the attribute non-malleability game, for
+    which it holds that $\mathsf{SinkGenAddr}(\paymentkeysign,
+    \paymentkeyverify, \msf{aux}^\ast, \beta^\ast, \msf{wrt}^\ast) \rightarrow \addr^\ast$,
+    where $\addr^\ast$ was not queried during the game and $\addr^\ast \neq
+    \addr$, where $\addr$ is the original address provided during the
+    challenge: $\mathsf{SinkGenAddr}(\paymentkeysign, \paymentkeyverify, \msf{aux},
+    \beta, \msf{wrt}) \rightarrow \addr$.
+    Since $\adversary$ is successful, the signature holds for both $\addr$ and
+    $\addr^\ast$, so $F$ uses $\addr^\ast = (\hash(\paymentkeyverify ||
+    \sign^\ast), \beta^\ast)$ to output $(\addr^\ast, \sign^\ast)$ as its pair
+    of forged message and signature.
+\end{proof}
+
+\begin{remark*}
+In an attempt to shorten the address, one may entertain the idea
+of including the signature in the hashed data. However, in such case, the hash
+could not act as the recovery tag anymore, since both the staking object
+$\beta$ and the signature cannot be predicted, given only the address's payment
+key. Therefore, either the wallet's recovery becomes necessarily linear to the
+number of addresses in the ledger, which is a significant performance overhead
+compared to the recovery mechanism of Section~\ref{subsec:address-attributes},
+or an additional component is introduced, \ie a dedicated recovery tag, which
+effectively counters the address shortening effort. Alternatively, the address
+could contain the signature's hash, rather than the signature itself, as the
+signature is only checked after a payment is issued, \ie when
+$\paymentkeyverify$ is revealed. However, although such design could reduce the
+address's length, it would also increase the ledger's overall size, since both
+the signature and its hash would be published.
+\end{remark*}

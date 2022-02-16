@@ -1,0 +1,67 @@
+\subsection{Desiderata}\label{sec:taxation-desiderata}
+
+In distributed ledger-based currency systems, a user $\user$ manages their
+assets via addresses. Each address $\addr$ is associated with a key pair
+$\keypair$, such that the private key $\privkey$ is used to claim ownership of
+the assets, \eg by signing special messages; typically $\addr =
+\hash(\pubkey)$ for some hash function $\hash$. Each address $\addr$ is
+associated with a (public) balance $\balance(\addr)$ so, given a list
+$[\addr_1, \dots, \addr_n]$ of all addresses that $\user$ controls,
+$\user$'s total assets are $\assets = \sum_{i=1}^n \balance(\addr_i)$. Our
+goal will be to retain as much privacy as possible, so $\assets$ should be the
+only information that is leaked to $\taxAuth$, without
+de-anonymization of individual transaction data.
+
+To showcase the limitations of current systems, consider the following example.
+Assume that Alice tax evades, \ie creates a secret, undeclared address
+$\addr$ and controls some assets $\asset$ in it. Given the pseudonymous
+nature of the ledger, $\addr$ cannot be correlated with Alice, until she
+uses it. Following, Alice issues a transaction $\tau$ which sends $\theta$
+assets from $\addr$ to Bob. If Bob suspects that Alice evaded taxation for
+these $\theta$ assets, they might want to report her to the authorities for
+inspection. However, the complaint should be accompanied by a proof that
+$\addr$ is controlled by Alice, \ie a proof that Alice knows the private key
+associated with $\addr$. This is necessary as $\taxAuth$ needs to
+distinguish between two scenarios:
+\begin{inparaenum}[i)]
+    \item Alice controls $\addr$ and tax evades;
+    \item Bob is lying about Alice owning $\addr$.
+\end{inparaenum}
+In the first scenario, Bob \emph{does} know that $\addr$ is controlled by
+Alice, but $\tau$ is not sufficient to prove it.
+Instead, Bob needs a proof which can only be supplied by Alice, \eg a signature
+from Alice which acknowledges $\tau$ or $\addr$. However, if Alice tax
+evades, naturally she would not create such incriminating proof.
+
+It is important that we retain as many good features of existing ledger systems
+as possible. The most notable such feature is transaction privacy, thus our
+work considers pseudonymous, Bitcoin-like levels of privacy, and minimizes the
+information leaked to the authorities during a tax auditing. Another important
+aspect is the mechanism's performance. A fundamental ingredient of payment
+systems is the seamless transaction experience, so it is important to allow
+users to transact at all times, while also avoiding significant strain during
+taxation periods. Finally, our mechanisms aim to minimize the amount of
+(additional) published data, since storage in
+distributed ledgers is particularly costly.
+
+In summary, the desiderata of our mechanisms are as follows:
+\begin{itemize}
+    \item \emph{Tax gap identification and counterincentive}: Tax evasion, \ie failure of a user
+        $\user$ to declare the amount of assets they own, should be either
+        detectable by a tax authority $\taxAuth$, with access to the
+        ledger, or render the assets unusable.
+    \item \emph{High level of privacy}: $\taxAuth$ should --- at most ---
+        learn the total amount of assets owned by each taxpayer at the end of a
+        fiscal year; this information should be leaked only to $\taxAuth$ and
+        no additional information should be leaked to any other party, apart
+        from the information already published on the ledger.
+    \item \emph{Unobstructed operation}: The introduction of a taxation
+        mechanism should not result in any period during which the --- tax
+        compliant --- users are prohibited from transacting.
+    \item \emph{Low performance overhead}: The taxation mechanism should not
+        introduce a major performance overhead, in terms of computation and
+        storage requirements from the users and the taxation authority.
+    \item \emph{Balanced load}: The computation and storage overhead of
+        taxation should be spread over a period of time, rather than introduce
+        performance spikes.
+\end{itemize}

@@ -1,0 +1,25 @@
+\paragraph{Related work}
+Literature offers various works on auditing of distributed ledger-based assets.
+A holistic approach is taken in zkLedger~\cite{narula2018zkledger}, which
+combines a permissioned ledger with zero-knowledge proofs to create a
+tamper-resistant, verifiable ledger of transactions.
+PRCash~\cite{EPRINT:WKCC18} also employs a permissioned ledger and offers a
+regulation mechanism that restricts the total amount of assets a user can
+receive anonymously for a period of time. Also Garman
+\etal~\cite{FC:GarGreMie16} propose an anonymous ledger, which can enforce
+specific transaction policies. Following, Section~\ref{sec:taxchain} aims at
+offering a simpler design, which can be more easily integrated in existing
+pseudonymous distributed ledgers, compared to the aforementioned works. Another
+interesting research thread considers proofs of solvency. The first such scheme
+for Bitcoin exchanges, proposed by Maxwell~\cite{wilcox2014proving}, leaks the
+total amount of both assets and liabilities of the exchange; more importantly,
+it enables an attack that allows the exchange to hide assets, as detailed by in
+Zeroledge~\cite{doernerzeroledge}, which also proposed a privacy-preserving
+system that allows exchanges to prove properties about their holdings.
+Provisions~\cite{CCS:DBBCB15} is a zero-knowledge proof of solvency mechanism
+for Bitcoin exchanges, based on Sigma protocols \ie without the need to reveal
+the addresses or the amount of assets that an exchange controls. Similarly,
+Agrawal \etal~\cite{C:AgrGanMoh18} describe a proof of solvency which achieves
+better performance compared to Provisions, although assuming a trusted setup.
+The mechanism of Section~\ref{sec:provisions-extension} extends
+Provisions and is also applicable to~\cite{C:AgrGanMoh18}.

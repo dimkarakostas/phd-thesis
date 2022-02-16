@@ -1,0 +1,28 @@
+\paragraph{Contributions}
+This chapter provides a formal framework of account management and stake
+pool formation in PoS systems. In more detail, our contributions are as
+follows. First, we present the relevant desiderata of a PoS wallet, \ie a set
+of requirements general and flexible enough to be compatible with a number of
+different types of actors in the system. Based on the desiderata, we provide a
+formal treatment of address and asset management in the form of the ideal
+functionality $\FuncW$, which epitomizes a PoS wallet's core. Our analysis
+follows in the tradition of the UC Framework~\cite{FOCS:Canetti01} and is
+inspired by Canetti~\cite{EPRINT:Canetti03}, which allows us to define our
+setting in a composable way. While formalizing the addresses and their
+attributes, a nuanced and overlooked, but equally important, notion emerges,
+namely \emph{address malleability}. This property is also of independent
+interest for any setting where an object, such as an identification tag,
+depends on multiple attributes, such as keys or metadata.  We describe various
+threat models and protection levels, which range from fully malleable schemes
+to entirely non-malleable.  Given our theoretical foundations, we next define
+the wallet protocol, which securely realizes $\FuncW$ under standard
+cryptographic assumptions. The protocol is highly parametric, thus offering
+flexibility in the wallet's implementation. Following, we describe an address
+construction mechanism, which both ensures a strong level of security and
+covers the majority of our desiderata. Finally, we combine the core wallet
+funcitonality with a generic PoS ledger to form a complete PoS wallet.
+Specifically, we detail how the core wallet can participate in the PoS protocol
+and conduct payments, stake pool registration, and stake delegation, and
+conclude with proving the security of the stake-pooled variant of any PoS
+protocol, as well as describe various modes of operation, which allow for
+enhanced privacy and security.

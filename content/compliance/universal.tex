@@ -1,0 +1,300 @@
+\section{Fair Rewards}\label{sec:universal}
+
+As described in Section~\ref{sec:model}, each party $\party$ controls a percentage
+$\miningpower_{\party}$ of the system's participating power. Although
+this parameter is set at the beginning of the execution, it is not always
+public. For instance, a party could obscure its amount of hashing power by
+refraining from performing some queries. In other cases, each
+party's power is published on the distributed ledger and, for all executions,
+can be extracted from the observer's chain. A prime example of such systems is
+non-anonymous PoS ledgers, where each party's power is denoted by
+its assets, which are logged in real time on the ledger.
+
+These systems, where power distribution is public, can employ a special
+type of rewards, \emph{fair rewards}.\footnote{The term
+\emph{fairness} is an allusion to Fruitchains~\cite{PODC:PasShi17}.}
+Specifically, the system
+defines a fixed, total number of rewards $\totalReward > 0$. At the end
+of an execution, if at least one block is created, each party $\party$ receives
+a percentage $\universalRewardFunc(\miningpower_{\party})$ of
+$\totalReward$, where $\universalRewardFunc(\cdot): [0, 1] \rightarrow [0, 1]$;
+in the real world, $\universalRewardFunc$ is usually the identity
+function. If no blocks are created during the execution, then every party gets
+$0$ rewards.
+
+Intuitively, fair rewards compensate users for investing in the
+system. Unless no block is created (which typically happens with very small
+probability when the parties honestly follow the protocol), the level of
+rewards depends \emph{solely} on a party's power, and not in the messages
+diffused during the execution. Definition~\ref{def:universal-rewards} formally
+describes the family of fair reward random variables.
+
+\begin{definition}[Fair Rewards]\label{def:universal-rewards}
+    For a total number of rewards $\totalReward \in \mathbb{R}_{> 0}$, a
+    \emph{fair reward} random variable $\reward_{\party, \execution}$ satisfies
+    the following:
+    \begin{enumerate}
+        \item $\forall \executionTrace \; \forall \party \in \partySet: \reward_{\party, \executionTrace} =
+ \left\{\begin{array}{ll}
+  \universalRewardFunc(\miningpower_{\party}) \cdot \totalReward,&\mbox{if at least one valid block is produced during }\executionTrace\\
+  0,&\mbox{otherwise}
+\end{array}
+\right.$
+        \item $\sum_{\party \in \partySet} \universalRewardFunc(\miningpower_{\party}) = 1$
+    \end{enumerate}
+    where $\universalRewardFunc: [0, 1] \rightarrow [0, 1]$.
+\end{definition}
+
+As shown in Theorem~\ref{thm:universal-reward}, blockchains with fair
+rewards are $(\epsilon,\infractionPredicate)$-compliant for the utility Reward (cf. Definition~\ref{def:utility}), where $\epsilon$ is typically a small value and $\infractionPredicate$ is an arbitrary associated infraction predicate. Intuitively, since a
+party is rewarded the same amount regardless of their protocol-related actions,
+nobody can increase their rewards by deviating from the honest
+strategy (as long as at least one block is produced).
+
+\begin{theorem}\label{thm:universal-reward}
+    Let:
+    \begin{inparaenum}[i)]
+        \item $\proto$ be a blockchain protocol run by the parties $\party_1, \ldots, \party_\totalParties$;
+        \item $\infractionPredicate$ be any infraction predicate associated with $\proto$;
+        \item $\bar{\utility}=\langle \utility_1, \ldots, \utility_\totalParties \rangle$ be a utility vector, where $\utility_i$ is the utility \emph{Reward} of party $\party_i$;
+        \item $\totalReward$ be the total rewards distributed by the protocol;
+        \item $\universalRewardFunc: [0, 1] \rightarrow [0, 1]$ be a fair reward function;
+        \item $\alpha$ be the probability that no blocks are produced when all parties follow the honest strategy.
+    \end{inparaenum}
+    Then, $\proto$ is $(\epsilon, \infractionPredicate)$-compliant \wrt $\bar{\utility}$, for $\epsilon := \alpha \cdot \underset{j \in [\totalParties]}{\mathsf{max}}\{\universalRewardFunc(\miningpower_{\party_j}) \cdot \totalReward \}$.
+\end{theorem}
+\begin{proof}
+    By Definition~\ref{def:universal-rewards} and the definition of $\alpha$, for the ``all honest'' strategy profile $\profile_\proto := \langle \proto, \ldots, \proto \rangle$, we have that $\Pr[\reward_{\party_i,\execution_{\profile_\proto}} = \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward] = 1 - \alpha$ and $\Pr[\reward_{\party_i, \execution_{\profile_\proto}} = 0] = \alpha$, for every $i \in [\totalParties]$. Therefore, for every $i \in [\totalParties]$,
+%
+    $\utility_i(\profile_\proto) = E\big[\reward_{\party_i,\execution_{\profile_{\party}}}\big] = (1 - \alpha) \cdot \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward$.
+
+    Assume that for some $i \in [\totalParties]$, $\party_i$ unilaterally deviates
+    from $\proto$ by employing a different strategy $\strategy_i$. In this case, we
+    consider the strategy profile $\profile = \langle \strategy_1, \ldots, \strategy_n \rangle$
+    where $\strategy_j = \proto$ for $j \in [\totalParties] \backslash \{i\}$. Since $\utility_i$ is the utility
+    \emph{Reward} under fair rewards with $\totalReward, \universalRewardFunc(\cdot)$, we have that for all random coins of the execution $\execution_{\profile}$, the value of the reward random variable $\reward_{\party_i, \execution_{\profile}}$ is no more than $\universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward$.
+    Consequently, $\utility_i(\profile) \leq \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward$, and so we have that
+    %
+    \[\utility_i(\profile) \leq \utility_i(\profile_\proto) + \alpha \cdot \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward \leq \utility_i(\profile_\proto) + \alpha \cdot \underset{j \in [\totalParties]}{\mathsf{max}}\{\universalRewardFunc(\miningpower_{\party_j}) \cdot \totalReward \}\;.\]
+    %
+    If $\epsilon := \alpha \cdot \underset{j \in [\totalParties]}{\mathsf{max}}\{\universalRewardFunc(\miningpower_{\party_j}) \cdot \totalReward \}$ and since $i$ and $\strategy_i$ are arbitrary, we conclude that $\proto$ is a $\epsilon$-Nash equilibrium
+    \wrt $\bar{\utility}$. Thus, by Proposition~\ref{prop:eq_comp}, $\proto$ is
+    $(\epsilon, \infractionPredicate)$-compliant \wrt $\bar{\utility}$.
+\end{proof}
+
+Theorem~\ref{thm:universal-reward} is consistent with the incentives' analysis
+of~\cite{C:KRDO17} under fair rewards. However, when
+introducing operational costs to analyze profit, a problem arises: a user can
+simply abstain and be rewarded nonetheless. Such behavior results in a
+``free-rider problem''~\cite{baumol2004welfare}, where a user reaps some
+benefits while not under-paying them or not paying at all.
+Theorem~\ref{thm:universal-profit} formalizes this argument and
+shows that a blockchain protocol, associated with the abstaining infraction predicate $\infractionPredicate_{abs}$ (cf. Definition~\ref{def:blockchain-infraction}), under fair rewards is \emph{not}
+$(\epsilon, \infractionPredicate_{abs})$-compliant \wrt utility \emph{Profit}, for reasonable values of $\epsilon$.
+
+\begin{theorem}\label{thm:universal-profit}
+    Let:
+    \begin{inparaenum}[i)]
+        \item $\proto$ be a blockchain protocol run by the parties $\party_1, \ldots, \party_\totalParties$;
+        \item $\infractionPredicate_{abs}$ be the abstaining infraction predicate;
+        \item $\bar{\utility}=\langle \utility_1, \ldots, \utility_\totalParties \rangle$ be a utility vector, where $\utility_i$ is the utility \emph{Profit} of party $\party_i$;
+        \item $\totalReward$ be the total rewards distributed by the protocol;
+        \item $\universalRewardFunc: [0, 1] \rightarrow [0, 1]$ be a fair reward function;
+        \item $\alpha$ be the probability that no blocks are produced when all parties follow the honest strategy.
+    \end{inparaenum}
+
+    For $i \in [\totalParties]$, also let the following:
+    \begin{inparaenum}[i)]
+        \item $\cost^\bot_{\party_i}$ be the minimum cost of $\party_i$ across all possible execution traces where $\party_i$ employs $\proto$;
+        \item $\beta_i$ be the probability that no blocks are produced when $\party_i$ abstains throughout the entire execution and all the other parties follow $\proto$.
+    \end{inparaenum}
+
+     Then, for every $\epsilon\geq0$ such that
+     $\epsilon < \underset{i \in [\totalParties]}{\mathsf{max}}\{\cost^\bot_{\party_i} - (\beta_i - \alpha) \cdot \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward \}$,
+     the protocol $\proto$ is \emph{not} $(\epsilon, \infractionPredicate_{abs})$-compliant \wrt $\bar{\utility}$.
+\end{theorem}
+\begin{proof}
+    By Definition~\ref{def:universal-rewards} and the definition of $\alpha$,
+    for the ``all honest'' strategy profile $\profile_{\proto} := \langle
+    \proto, \ldots, \proto \rangle$, we have that
+    $\Pr[\reward_{\party_i, \execution_{\profile_{\proto}}} = \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward] = 1 - \alpha$
+    and $\Pr[\reward_{\party_i, \execution_{\profile_{\proto}}} = 0] = \alpha$,
+    for every $i \in [\totalParties]$.  Since $\proto$ is an
+    $\infractionPredicate_{abs}$-compliant strategy, if $\party_i$ follows
+    $\proto$ then it does not abstain, \ie it makes queries to
+    $\oracle_\proto$. Therefore, the cost of $\party_i$ is at least
+    $\cost^\bot_{\party_i}$ and for $\profile_{\proto}$, the utility
+    \emph{Profit} $\utility_i(\profile_{\proto})$ is no more than
+    \[\utility_i(\profile_{\proto}) = E\big[\reward_{\party_i, \execution_{\profile_{\proto}}}\big] - E\big[\cost_{\party_i, \execution_{\profile_{\proto}}}\big] \leq (1 - \alpha) \cdot \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward - \cost^\bot_{\party_i}\;.\]
+
+    Now assume that $\party_i$ unilaterally deviates by following the ``always
+    abstain" strategy, $\strategy_\mathsf{abs}$, which is of course not
+    $\infractionPredicate_{abs}$-compliant. Then, $\party_i$ makes no queries
+    to $\oracle_\proto$ and, by Assumption~\ref{ass:zero-cost}, its cost is
+    $0$. Let $\profile_i$ be the strategy profile where $\party_i$ follows
+    $\strategy_\mathsf{abs}$ and every party $\party \neq \party_i$ follows
+    $\proto$. By the definition of $\beta_i$, we have that
+    $\Pr[\reward_{\party_i, \execution_{\profile_i}} = \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward] = 1 - \beta_i$ and $\Pr[\reward_{\party_i, \execution_{\profile_i}} = 0] = \beta_i$.
+
+    By the definition of $\utility_i$, it holds that
+    \[\utility_i(\profile_i) = E\big[\reward_{\party_i, \execution_{\profile_i}}\big] - E\big[\cost_{\party_i, \execution_{\profile_i}}\big] = (1 - \beta_i) \cdot \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward - 0\;.\]
+    Assume that
+    $\cost^\bot_{\party_i} - (\beta_i - \alpha) \cdot \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward > 0$. Then, for $\epsilon_i < \cost^\bot_{\party_i} - (\beta_i - \alpha) \cdot \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward$,
+    we have that
+    \begin{equation*}
+        \begin{split}
+            \utility_i(\profile_i) & = (1 - \beta_i) \cdot \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward = \\
+            & = (1 - \alpha) \cdot \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward + (\alpha - \beta_i) \cdot \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward = \\
+            & = (1 - \alpha) \cdot \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward - \cost^\bot_{\party_i} + \cost^\bot_{\party_i} - (\beta_i - \alpha) \cdot \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward \geq \\
+            & \geq \utility_i(\profile_{\proto}) + \cost^\bot_{\party_i} - (\beta_i - \alpha) \cdot \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward > \\
+            & > \utility_i(\profile_{\proto}) + \epsilon_i
+        \end{split}
+    \end{equation*}
+
+    Let $i^*\in[n]$ be such that
+    $\cost^\bot_{\party_{i^*}} - (\beta_{i^*} - \alpha) \cdot \universalRewardFunc(\miningpower_{\party_{i^*}}) \cdot \totalReward \} = \underset{i \in [\totalParties]}{\mathsf{max}}\{ \cost^\bot_{\party_i} - (\beta_i - \alpha) \cdot \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward \}$.
+    By the above, for every
+    $0\leq\epsilon < \cost^\bot_{\party_{i^*}} - (\beta_{i^*} - \alpha) \cdot \universalRewardFunc(\miningpower_{\party_{i^*}}) \cdot \totalReward \}$,
+    we have that $\profile_{i^*}$ is directly $\epsilon$-reachable from
+    $\profile_\proto$ \wrt $\bar{\utility}$.
+
+    Thus, $\profile_{i^*}$ is a non $\infractionPredicate_{abs}$-compliant
+    strategy profile that is in $\mathsf{Cone}_{\epsilon,
+    \bar{\utility}}(\proto)$. Consequently, for
+    $0 \leq\epsilon < \underset{i \in [\totalParties]}{\mathsf{max}}\{ \cost^\bot_{\party_i} - (\beta_i - \alpha) \cdot \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward \}$,
+    it holds that
+    $\mathsf{Cone}_{\epsilon, \bar{\utility}}(\proto) \subsetneq (\strategySet_{\infractionPredicate_{abs}})^\totalParties$,
+    \ie the protocol $\proto$ is not $(\epsilon,
+    \infractionPredicate_{abs})$-compliant \wrt $\bar{\utility}$.
+\end{proof}
+
+Before concluding, let us examine the variables of the bound
+$\underset{i \in [\totalParties]}{\mathsf{max}}\{ \cost^\bot_{\party_i} - (\beta_i - \alpha) \cdot \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward \}$
+of Theorem~\ref{thm:universal-profit}. We note that, in the context of
+blockchain systems, a ``party'' is equivalent to a unit of power; therefore, a
+party $\party$ that controls $\miningpower_{\party}$ of the total power, in
+effect controls $\miningpower_{\party}$ of all ``parties'' that participate in
+the blockchain protocol.
+
+To discuss $\alpha$ and $\beta_i$, we first consider the liveness
+property~\cite{RSA:GarKia20} of blockchain protocols. Briefly, if a protocol
+guarantees liveness with parameter $u$, then a transaction which is diffused on
+slot $\slot$ is part of the (finalized) ledger of every honest party on round
+$\slot + u$. Therefore, assuming that the environment gives at least one
+transaction to the parties, if a protocol $\proto$ guarantees liveness unless
+with negligible probability $\mathsf{negl}(\secparam)$,\footnote{Recall that $\secparam$ is
+$\proto$'s security parameter, while $\mathsf{negl}(\cdot)$ is a negligible function.}
+then at least one block is created during the execution with overwhelming
+probability (in $\secparam$).
+
+Now, we consider the probabilities $\alpha$ and  $\beta_i$.  The former is
+negligible, since consensus protocols typically guarantee liveness against a
+number of crash (or Byzantine) faults, let alone if all parties are honest. The
+latter, however, depends on $\party_i$'s percentage of power
+$\miningpower_{\party_i}$. For instance, consider Ouroboros, which is secure if
+a deviating party $\party_i$ controls less than $\frac{1}{2}$ of the staking
+power and all others employ $\proto$. Thus, if $\miningpower_{\party_i} =
+\frac{2}{3}$ and $\party_i$ abstains, the protocol cannot guarantee liveness,
+\ie it is probable that no blocks are created. However, if
+$\miningpower_{\party_i} = \frac{1}{4}$, then liveness is guaranteed with
+overwhelming probability; hence, even if $\party_i$ abstains, at least one
+block is typically created.
+Corollary~\ref{col:universal-profit-non-compliance} generalizes this argument,
+by showing that, if enough parties participate, then at least one of them is
+small enough, such that its abstaining does not result in a system halt, hence
+it is incentivized to be non-compliant.
+
+\begin{corollary}\label{col:universal-profit-non-compliance}
+    Let $\proto$ be a blockchain protocol, with security parameter $\secparam$,
+    which is run by $\totalParties$ parties, under the same considerations of
+    Theorem~\ref{thm:universal-profit}.
+    Additionally, assume that $\proto$ has liveness with security threshold
+    $\frac{1}{x}$ in the following sense: for every strategy profile
+    $\profile$, if $\underset{\party \in \partySet_{-\profile}}{\sum}
+    \miningpower_{\party} < \frac{1}{x}$, where $\partySet_{-\profile}$ is the
+    set of parties that deviate from $\proto$ when $\profile$ is followed, then
+    $\proto$ guarantees liveness with overwhelming (i.e.,
+    $1-\mathsf{negl}(\secparam)$) probability.
+
+    If $x < \totalParties$, then for (non-negligible) values
+    $\epsilon < \underset{i \in [\totalParties]}{\mathsf{max}}\{\cost^\bot_{\party_i}\} - \mathsf{negl}(\secparam)$,
+    $\proto$ is \emph{not} $(\epsilon, \infractionPredicate_{abs})$-compliant \wrt $\bar{\utility}$.
+\end{corollary}
+\begin{proof}
+    First, since $\proto$ guarantees liveness even under some byzantine faults,
+    $\alpha=\mathsf{negl}(\secparam)$.
+
+    Second, if $x < \totalParties$, then there exists $i\in[n]$ such that
+    $\miningpower_{\party_i} < \frac{1}{x}$. To prove this, if $\totalParties >
+    x$ and $\forall j\in[n]: \miningpower_{\party_j} \geq \frac{1}{x}$ then
+    $\underset{j \in [\totalParties]}{\sum} \miningpower_{\party_i} \geq \frac{n}{x} > 1$.
+    This contradicts to the definition of the parties' participating power (cf.
+    Section~\ref{sec:model}), where it holds that $\underset{j \in
+    [\totalParties]}{\sum} \miningpower_{\party_j}=1$.
+
+    Now consider the strategy profile $\profile$ where $\party_i$ abstains and
+    all the other parties honestly follow $\proto$. Then, by definition,
+    $\partySet_{-\profile}=\{\party_i\}$ and therefore,
+    \[\underset{\party \in \partySet_{-\profile}}{\sum} \miningpower_{\party}=\miningpower_{\party_i} < \frac{1}{x}\;.\]
+    Thus, by the assumption for $\proto$, we have that if the parties follow
+    $\profile$, then $\proto$ guarantees liveness with
+    $1-\mathsf{negl}(\secparam)$ probability. Hence, $\beta_i =
+    \mathsf{negl}(\secparam)$.  Finally, since
+    $\universalRewardFunc(\miningpower_{\party_i}) \in [0, 1]$ and
+    $\totalReward$ is a finite value irrespective of the parties' strategy
+    profile, the value $(\beta_i - \alpha) \cdot
+    \universalRewardFunc(\miningpower_{\party_i}) \cdot \totalReward$ is also
+    negligible in $\secparam$.
+\end{proof}
+
+The minimal cost $\cost^\bot_{\party_i}$ of honest participation for
+$\party_i$ depends on the blockchain system's details. In PoW systems, where
+participation consists of repeatedly performing computations, cost increases
+with the percentage of mining power; for instance, controlling $51$\% of
+Bitcoin's mining power for $1$ hour costs
+\$$700,000$.\footnote{\url{https://www.crypto51.app} [May 2021]} In PoS
+systems, cost is typically irrespective of staking power, since participation
+consists only of monitoring the network and regularly signing messages; for
+example, running a production-grade Cardano node costs \$$140$ per
+month\footnote{https://forum.cardano.org/t/realistic-cost-to-operate-stake-pool/40056
+[September 2020]}. Therefore, taking
+Corollary~\ref{col:universal-profit-non-compliance} into account, the upper
+bound $\underset{i \in [\totalParties]}{\mathsf{max}}\{\cost^\bot_{\party_i}\}
+- \mathsf{negl}(\secparam)$ of $\epsilon$ is typically rather large for PoS
+systems.
+
+The free-rider hazard is manifested in
+Algorand\footnote{\url{https://algorand.foundation}}, a cryptocurrency system
+that follows the Algorand consensus
+protocol~\cite{EPRINT:CGMV18,EPRINT:GHMVZ17} and employs fair rewards, as
+defined above. Its users own ``Algo'' tokens and transact over a ledger
+maintained by ``participation nodes'', which run the Algorand protocol and
+extend the ledger via blocks. Each user receives a fixed reward\footnote{For a
+weekly execution, the reward per owned Algo is $0.001094$ Algos.
+[\url{https://algoexplorer.io/rewards-calculator} [October 2020]} per Algo
+token they own~\cite{algorand-rewards}, awarded with every block.  Users
+may run a participation node, but are not
+rewarded~\cite{DBLP:conf/dsn/FooladgarMJR20} for doing so, and participation is
+proportional to the amount of Algos that the user owns. Therefore, a party that
+owns a few Algos will expectedly abstain from participation in the consensus
+protocol.
+
+In conclusion, fair rewards in PoS protocols may incentivize users to abstain.
+In turn, this can impact the system's performance, \eg delaying block
+production and transaction finalization. In the extreme case, when multiple
+parties can change their strategy simultaneously, it could result in a
+``tragedy of the commons'' situation~\cite{lloyd1833two}, where \emph{all}
+users abstain and the system grinds to a halt.
+
+\begin{remark*}
+This section illustrates a difference between PoW and PoS. In
+PoS systems, each party's power is registered on the ledger (in the form of
+assets), without requiring any action from each party. In PoW, a party's power
+becomes evident only after the party puts their hardware to work. This is
+demonstrated in Fruitchains~\cite{PODC:PasShi17}, a PoW protocol where each
+party receives a reward (approximately) proportional to their mining power.
+However, the PoW protocol cannot identify each party's power, unless the party
+participates and produces some blocks (or ``fruits''). Therefore, since the
+proof of Theorem~\ref{thm:universal-profit} relies on abstaining, this result
+does not directly translate to Fruitchains, or similar PoW protocols.
+\end{remark*}

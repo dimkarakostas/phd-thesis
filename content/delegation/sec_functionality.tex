@@ -1,0 +1,135 @@
+\section{The Core-Wallet Functionality}\label{sec:basicdef}
+
+The major contribution of this chapter is the definition of the ideal
+functionality of the core wallet. The goal of this definition is to distill, in
+a concise way, a formal model of the properties of a PoS wallet.
+
+Our ideal functionality $\FuncW$ is inspired by
+Canetti~\cite{EPRINT:Canetti03}. $\FuncW$ (Figures~\ref{fig:FWalletCore-1}
+and~\ref{fig:FWalletCore-2}) interacts with the ideal adversary $\Iadv$ and a
+set of parties denoted by $\partyset$ and is parameterized by the predicate
+$M(\cdot, \cdot, \cdot)\rightarrow\{0,1\}$. It also keeps the, initially empty
+lists, $S$ of staking actions and $\mc{T}$ of transactions. We assume, without
+loss of generality, that, given a list of attributes $\addressgenlist =
+(\attribute_1, \ldots, \attribute_\addrgenlength)$, $\attribute_1$ is the
+staking key's information and $\attribute_2$ is a recovery tag (which will be
+further investigated in the upcoming Section~\ref{sec:address}). We remind that
+access to an address implies access to its public attributes $d =
+(\attribute_1, \ldots, \attribute_{p-1})$ and, given the ledger, access to its
+semi-public attributes $(\attribute_p, \ldots, \attribute_{i-1})$ as well.
+
+The functionality distinguishes the addresses in three types: base,
+pointer, and exile. As we will show in Section~\ref{sec:address}, each
+type has a specific utility; briefly, base addresses help bootstrap a wallet,
+pointer addresses are shorter and aim at better performance, and exile
+addresses are withdrawn from the PoS protocol's execution.
+
+\myhalfbox{Functionality $\FuncW^M$}{white!40}{white!10}{
+   \noindent \emph{Initialization:}
+        Upon receiving $\msg{Init}{}$ from $\party \in \partyset$, forward it
+        to $\Iadv$ and wait for $\msg{InitOk}{}$. Then initialize the empty
+        lists $L_{\party}$ of addresses and attribute lists and $K_{\party}$ of
+        staking keys, and send $\msg{InitOk}{}$ to $\party$.
+
+    \noindent \emph{Address Generation:}
+        Upon receiving $\msg{GenerateAddress}{\msf{aux}}$ from $\party \in \partyset$,
+        forward it to the $\Iadv$. Upon receiving $\msg{Address}{\addr,
+        \addresslist}$ from $\Iadv$, parse $\addresslist$ as $\addresstuple$
+        and $\forall \party' \in \partyset$ check if $\forall (\addr^\prime,
+        \addresstupleprime) \in L_{\party'}$ it holds that $\addr \neq
+        \addr^\prime$, $\attribute'_2 \neq \attribute_2$, and $\forall j \in
+        [i, \ldots, \addrgenlength]: \attribute'_j \neq \attribute_j$, \ie the
+        address, recovery tag, and private attributes are unique. If so, then:
+        \begin{enumerate}
+            \item if $\msf{aux} = (\msf{base})$, check that $\forall
+                (\addr^\prime, \addresstupleprime) \in L_{\party}: \attribute'_1 \neq
+                \attribute_1$, \ie the new staking key is unique,
+            \item else if $\msf{aux} = (\msf{pointer}, \stakingkeyverify)$,
+                check that $\attribute_1  = \stakingkeyverify$,
+            \item else if $\msf{aux} = (\msf{exile})$, check that
+                $\attribute_1  = \bot$.
+        \end{enumerate}
+        If the checks hold or $\party$ is corrupted, then insert $(\alpha,
+        \addresslist)$ to $L_{\party}$ and return $\msg{Address}{\addr}$ to $\party$. If
+        $\msf{aux} = (\msf{base})$ also insert $\attribute_1$ to $K_{\party}$ and
+        return $\msg{StakingKey}{\attribute_1}$ to $\party$.
+
+   \noindent \emph{Wallet Recovery:}
+        Upon receiving $\msg{RecoverWallet}{i}$ from $\party \in \partyset$, for
+        the first $i$ elements in $L_{\party}$ return $\msg{Tag}{\attribute_2}$.
+
+   \noindent \emph{Address Recovery:}
+        Upon receiving a message $\msg{RecoverAddr}{\addr, i}$ from a party $\party
+        \in \partyset$, if $(\alpha, l)$ is one of the first $i$ elements of
+        $L_{\party}$ or $M(L_{\party}, \msf{recover}, \addr) = 1$, return
+        $\msg{RecoveredAddr}{\addr}$.
+
+   \noindent \emph{Issue Transaction:}
+        By receiving from $\party \in \partyset$ the message $\msg{Pay}{\assetset,
+        \addr_s, \addr_r, m}$, if $\exists \addresslist:
+        (\addr_s, \addresslist) \in L_{\party}$ forward it to $\Iadv$. Upon
+        receiving $\msg{Transaction}{\tx, \sign}$ from $\Iadv$, such that
+        $\tx = (\assetset, \addr_s, \addr_r, m)$, check if
+        $\forall (\tx', \sign',b') \in \mc{T}: \sign' \neq \sign$, if $(\tx,
+        \sign, 0) \not \in \mc{T}$, and if $M(L_{\party}, \msf{issue},
+        \addr_r) = 1$. If all checks hold, then insert $(\tx, \sign, 1)$ to
+        $\mc{T}$ and return $\msg{Transaction}{\tx, \sign}$.
+}{\label{fig:FWalletCore-1} The PoS core-wallet ideal functionality. (Part 1)}
+
+\myhalfbox{Functionality $\FuncW^M$}{white!40}{white!10}{
+    \noindent \emph{Verify Transaction:}
+        Upon receiving from $\party \in \partyset$ the message $\msg{VerifyPay}{\tx,
+        \sign}$, with $\tx = (\assetset, \addr_s, \addr_r, m)$
+        for a metadata string $m$, forward it to $\Iadv$ and wait for a reply
+        message $\msg{VerifiedPay}{\tx, \sign, \phi}$. Then:
+        \begin{itemize}
+            \item if $M(L_{\party}, \msf{verify}, \addr_s) = 0$, set $f = 0$
+            \item else if $(\tx, \sign, 1) \in \mc{T}$, set $f = 1$
+            \item else, if $\party$  is not corrupted and $(\tx, \sign, 1) \not \in
+                \mc{T}$, set $f = 0$ and insert $(\tx, \sign, 0)$ to
+                $\mc{T}$
+            \item else, if $(\assetset, \addr_s, \addr_r, m, \sign, b) \in
+                \mc{T}$, set $f = b$
+            \item else, set $f = \phi$.
+        \end{itemize}
+        Finally, send $\msg{VerifiedPay}{\tx, \sigma, f}$ to $\party$.
+
+    \noindent \emph{Issue Staking:}
+        Upon receiving $\msg{Stake}{\tx_{s}}$ from $\party$, such that $\tx_{s} =
+        (\stakingkeyverify, m)$ for a metadata string $m$, forward the message
+        to $\Iadv$. Upon receiving $\msg{Staked}{\tx_{s}, \sign}$ from $\Iadv$, if
+        $\forall (\tx_{s}', \sign', b') \in S: \sign' \neq \sign$, $(\tx_{s}, \sign, 0)
+        \not \in S$, and $\stakingkeyverify \in K_{\party}$, then add $(\tx_{s}, \sign,
+        1)$ to $S$ and return $\msg{Staked}{\tx_{s}, \sign}$ to $\party$.
+
+    \noindent \emph{Verify Staking:}
+        Upon receiving from $\party \in \partyset$ the message
+        $\msg{VerifyStake}{\tx_{s}, \sign}$, with $\tx_{s} = (\stakingkeyverify, m)$,
+        forward it to $\Iadv$ and wait for $\msg{VerifiedStake}{\tx_{s}, \sign,
+        \phi}$. Then find $\party_s$, such that $\stakingkeyverify \in
+        K_{\party_s}$, and:
+        \begin{itemize}
+            \item if $(\tx_{s}, \sign, 1) \in S$, set $f = 1$
+            \item else if $\party_s$ is not corrupted and $(\tx_{s}, \sign, 1)
+                \not \in S$, set $f = 0$ and insert $(\tx_{s}, \sign, 0)$ to $S$
+            \item else if exists an entry $(\tx_{s}, \sign, f') \in S$, set $f = f'$
+            \item else set $f = \phi$ and insert $(\tx_{s}, \sign, \phi)$ to $S$.
+        \end{itemize}
+        Finally, return $\msg{VerifiedStake}{\tx_{s}, \sign, f}$ to $\party$.
+}{\label{fig:FWalletCore-2} The PoS core-wallet ideal functionality. (Part 2)}
+
+\begin{remark*}
+Although $\FuncW$ offers a suitable security definition, for our
+requirements, as it relies on the \emph{standard} security properties of
+digital signatures and the address generation properties to be described in
+Section~\ref{subsec:addrgen_properties}, it does not offer any type of
+\emph{forward security} in the sense of Bellare and Miner~\cite{C:BelMin99}.
+However, protocols which require stronger security properties for their
+building blocks \emph{do} exist. For instance, Ouroboros Praos~\cite{EC:DGKR18}
+relies on a forward secure digital signature scheme, among other primitives, to
+provide security guarantees against fully-adaptive corruption in a
+semi-synchronous setting. Additionally, protocols like
+Cryptonote~\cite{van2013cryptonote} allow an arbitrary number of parties to
+operate the address generation interface, instead of restricting it to the
+wallet's owner.
+\end{remark*}

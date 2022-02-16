@@ -1,0 +1,214 @@
+\subsection{Bitcoin}\label{subsec:bitcoin}
+
+In this section, we study the Bitcoin~\cite{nakamoto2008bitcoin} blockchain
+protocol. Bitcoin is a prime example of a family of protocols that links the
+amount of valid blocks, that each party can produce per execution, with the
+party's hardware capabilities. This family includes:
+\begin{inparaenum}[i)]
+    \item Proof-of-Work-based protocols like Ethereum~\cite{wood2014ethereum},
+        Bitcoin NG~\cite{eyal2016bitcoin}, or Zerocash~\cite{SP:BCGGMT14};
+    \item Proof-of-Space~\cite{C:DFKP15} and
+        Proof-of-Space-Time~\cite{C:MorOrl19} protocols like
+        SpaceMint~\cite{FC:PKFGAP18} and Chia~\cite{AC:AACKPR17,EC:CohPie18}.
+\end{inparaenum}
+
+\paragraph{Execution Details}
+Typically, protocols from the aforementioned family enforce that, when all parties follow the protocol honestly, the expected percentage of blocks
+created by a party $\party$ is $\miningpower_{\party}$ of the total blocks
+produced by all parties during the execution. Along the lines of the formulation in~\cite{EC:GarKiaLeo15,C:GarKiaLeo17}, in the Bitcoin
+protocol, each party $\party$ can make at most $\miningpower_{\party}
+\cdot \powQueryNum$ queries to the hashing oracle $\oracle_\proto$ per time slot, where $q$ is the total number of queries that all parties can make to $\oracle_\proto$ during a time slot. We note that when $\party$ follows the Bitcoin protocol, they perform exactly $\miningpower_{\party} \cdot\powQueryNum$ queries to the hashing oracle.
+Each query can be seen as an independent block production trial and is
+successful with probability $\difficulty$, which is a
+protocol-specific ``mining difficulty'' parameter.
+
+From the point of view of the observer $\observer$, a party $\party$ is rewarded a
+fixed amount $\reward$ for each block they contribute to the chain output by
+$\observer$.
+Then, Bitcoin implements a special case of block-proportional rewards (cf.
+Definition~\ref{def:proportional-rewards}), such that:
+\begin{itemize}
+    \item The total number of rewards for $\executionTrace$ is
+        \[\totalReward_{\observer,\executionTrace} = \big|\chain_{\observer,\executionTrace}\big| \cdot \reward=\Big(\sum_{\hat{\party} \in \partySet} \msgOutputSet_{\hat{\party},\executionTrace}\Big)\cdot \reward\;,\]
+        where $|\cdot|$ denotes the length of a chain in blocks.
+    \item The proportional reward function $\proportionalRewardFunc(\cdot,\cdot)$ is defined as
+        \[\proportionalRewardFunc\big(\chain_{\observer,\executionTrace}, \party\big) =\frac{\msgOutputSet_{\party,\executionTrace}}{\big|\chain_{\observer,\executionTrace}\big|}=\frac{\msgOutputSet_{\party,\executionTrace}}{\sum_{\hat{\party} \in \partySet} \msgOutputSet_{\hat{\party},\executionTrace}}\]
+\end{itemize}
+\noindent Thus, by Definition~\ref{def:proportional-rewards}, we have that
+\begin{equation}\label{eq:bitcoin_reward}
+    \forall \executionTrace \; \forall \party \in \partySet: \reward_{\party, \executionTrace} = \proportionalRewardFunc(\chain_{\observer,\executionTrace}, \party) \cdot \totalReward_{\observer,\executionTrace}=\msgOutputSet_{\party,\executionTrace}\cdot \reward\;.
+\end{equation}
+
+In Bitcoin, on each time slot a party keeps a local chain,
+which is the longest among all available chains. If multiple longest chains
+exist, the party follows the chronological ordering of messages.
+
+Following, we assume that none of the participating parties has complete control
+over message delivery, \ie apart from the preference index (cf. Section~\ref{sec:network-model}). Therefore, when two parties $\party, \party'$
+produce blocks for the same index on the same time slot, it may be unclear
+which is adopted by third parties that follow the protocol.
+
+Furthermore, the \emph{index} of each block $\mesg$ is an integer that identifies
+the distance of $\mesg$ from $\genesis$, \ie its height in the tree of
+blocks. Blocks on the same height, but different branches, have the same
+index but are non-equivalent (recall, that two messages are equivalent if their
+hash is equal).
+
+\paragraph{Bitcoin is a Compliant Protocol \wrt Reward}
+We prove that Bitcoin is a $(\Theta(\delta^2), \infractionPredicate)$-compliant
+protocol under the utility \emph{Reward}, where $\infractionPredicate$ is any
+associated infraction predicate. By Definition~\ref{def:utility} and
+Eq.~\eqref{eq:bitcoin_reward}, we have that when parties follow the strategy
+profile $\sigma$, the utility $U_{\party}$ of party $\party$ is
+\begin{equation}\label{eq:bitcoin_utility}
+    U_{\party}(\sigma)=E\big[\msgOutputSet_{\party,\execution_\sigma}\big]\cdot \reward\;,
+\end{equation}
+where $\msgOutputSet_{\party,\execution_\sigma}$ is the (random variable)
+number of blocks produced by $\party$ in the chain output by $\observer$ and
+$\reward$ is the fixed amount of rewards per block. Our analysis considers
+typical values of the success probability $\delta$, sufficiently small such
+that $\delta\cdot q < 1$ (recall that $q$ is the total number of oracle queries
+available to all parties per slot).
+
+We say that party $\party$ is \emph{successful} during time slot $\slot$, if
+$\party$ manages to produce at least one block, \ie at least one oracle query
+submitted by $\party$ during $\slot$ was successful. The time slot $\slot$ is
+\emph{uniquely successful} for $\party$, if no other party than $\party$
+manages to produce a block in $\slot$. We prove the following lemma.
+
+\begin{lemma}\label{lem:unique_succ}
+    Assume an execution trace $\executionTrace$ of the Bitcoin protocol where
+    all parties follow the honest strategy. Let $\block_1,\ldots,\block_k$ be a
+    sequence of blocks produced by party $\party\in\mathbb{P}$ during a time
+    slot $\slot$ that was uniquely successful for $\party$ in
+    $\executionTrace$. Then, $\block_1,\ldots,\block_k$ will be included in the
+    chain output by the observer $\observer$.
+\end{lemma}
+\begin{proof}
+    Let $h$ be the height of $\block_1$. Then, for every $j\in\{1,\ldots,k\}$,
+    the height of the block $\block_j$ is $h+j-1$.  Assume for the sake of
+    contradiction that there is a $j^*\in[k]$ such that $\block_{j^*}$ is not
+    in the observer's chain. Since each block contains the hash of the previous
+    block in the chain of $\observer$, the latter implies that the subsequence
+    $\block_{j^*},\ldots,\block_k$ is not in the observer's chain. There are
+    two reasons that $\block_{j^*}$ is missing from the observer's chain.
+    \begin{enumerate}
+    \item The observer $\observer$ never received $\block_{j^*}$. However,
+        after the end of time slot $\slot$, $\observer$ will be activated and
+            fetch the messages included in its $\textsc{Receive}_\observer()$
+            string. Therefore, the case that $\observer$ never received
+            $\block_{j^*}$ cannot happen.
+
+    \item The observer has another block $\block'_{j^*}$ included in its chain
+        that has the same height, $h+j^*-1$, as $\block_{j^*}$. Since $\slot$
+            was uniquely successful for $\party$ in $\executionTrace$, the
+            block $\block'_{j^*}$ must have been produced in a time slot
+            $\slot'$ that is different than $\slot$. Assume that $\party$
+            produced the block sequence $\block'_{j^*},\ldots,\block'_{k'}$
+            during $\slot'$. We examine the following two cases:
+            \begin{enumerate}
+                \item $\slot>\slot'$: then $\block'_{j^*}$ was produced before
+                    $\block_{j^*}$, so in time slot $\slot'+1$ all parties
+                    received (at least) the sequence
+                    $\block'_{j^*},\ldots,\block'_{k'}$. All parties select the
+                    longest chain, so the chain that they will select will have
+                    at least $h+k'-1\geq h+j^*-1$ number of blocks in
+                    $\slot'+1$. Thus, for time slot $\slot\geq \slot'+1$ the
+                    parties submit queries for producing blocks which height is
+                    at least $h+k'>h+j^*-1$. So at time slot $\slot$, the party
+                    $\party$ cannot have produced a block which height is $\leq
+                    h+j^*-1$.
+                \item $r<r'$: then $\block_{j^*}$ was produced before
+                    $\block'_{j^*}$. So in time slot $r+1$ all parties receive
+                    the sequence $\block_1,\ldots,\block_k$. Thus, they will
+                    adopt a chain with at least $h+k-1\geq h+j^*-1$ number of
+                    blocks. Thus, for time slot $r'\geq r+1$ the parties submit
+                    queries for producing blocks with height at least
+                    $h+k>h+j^*-1$. Therefore, $\party$ cannot have produced a
+                    block of height $\leq h+j^*-1$ during time slot $r'$.
+            \end{enumerate}
+    \end{enumerate}
+By the above, $\block_{j^*}$ is a block with height $h+j^*-1$ received by
+    $\observer$ and no other block with height $h+j^*-1$ is included in
+    $\observer$'s chain. Since $\observer$ adopts the longest chain, there must
+    be a block with height $h+j^*-1$ that is included in its chain. It is
+    straightforward that this block will be $\block_{j^*}$, which leads to
+    contradiction.
+\end{proof}
+Subsequently, we apply Lemma~\ref{lem:unique_succ} to the proof of the main theorem of this subsection, stated below.
+
+\begin{theorem}\label{thm:bitcoin_eq_approx}
+Let $N$ be the number of time slots of the execution and $\infractionPredicate$
+    be any associated infraction predicate. Let $\bar{U}$ be the utility vector
+    where each party employs the utility Reward. Then, the Bitcoin protocol is
+    $(\epsilon,\infractionPredicate)$-compliant \wrt $\bar{U}$, for
+    $\epsilon:=\frac{NRq^2}{2}\delta^2$ .
+\end{theorem}
+
+\begin{proof}
+We will show that the Bitcoin protocol is an $\epsilon$-Nash equilibrium \wrt $\bar{\utility}$, for $\epsilon:=\frac{NRq^2}{2}\delta^2$. By Proposition~\ref{prop:eq_comp}, the latter implies that the Bitcoin protocol is $(\epsilon,\infractionPredicate)$-compliant \wrt $\bar{\utility}$.
+
+    Consider a protocol execution where all parties follow the honest strategy $\Pi$, with $\profile_\proto$ denoting the profile $\langle\Pi,\ldots,\Pi\rangle$. Let $\party$ be a party and $\mu_{\party}$ be its mining power.
+For $\slot\in[N]$, let $X_{\party,\slot}^{\profile_\proto}$ be the random variable that is $1$ if the time slot $\slot$ is uniquely successful for $\party$ and $0$ otherwise. By protocol description, a party $\party'$ makes $\mu_{\party'} \cdot q$ oracle queries during $\slot$, each with success probability $\delta$. Thus:
+\begin{equation}\label{eq:pr_unique}
+\begin{split}
+&\Pr[X_{\party,r}^{\profile_\proto}=1]=\\
+=&\Pr[\party\mbox{ is successful during }\slot]\cdot\\
+&\quad\quad\cdot\Pr[\mbox{all the other parties produce no blocks in } \slot]=\\
+    =&\Big(1-(1-\delta)^{\mu_{\party} q}\Big)\cdot\prod_{\party'\neq\party}(1-\delta)^{\mu_{\party'} q}=\\
+    =&\Big(1-(1-\delta)^{\mu_{\party} q}\Big)\cdot(1-\delta)^{(1-\mu_{\party}) q}
+    =(1-\delta)^{(1-\mu_{\party}) q}-(1-\delta)^q\;.
+\end{split}
+\end{equation}
+
+    The random variable $X_{\party,\execution_{\profile_\proto}}:=\sum_{\slot\in[N]}X_{\party,r}^{\profile_\proto}$ expresses the number of uniquely successful time slots for $\party$. By Eq.~\eqref{eq:pr_unique}, $X_{\party}^\Pi$ follows the binomial distribution with $N$ trials and probability of success $(1-\delta)^{(1-\mu_{\party}) q}-(1-\delta)^q$. Therefore:
+    $E\big[X_{\party,\execution_{\profile_\proto}}\big]=N\Big((1-\delta)^{(1-\mu_{\party}) q}-(1-\delta)^q\Big)$.
+
+Let $\msgOutputSet_{\party,\execution_{\profile_\proto}}$ be the number of blocks produced by $\party$ included in the chain output by the observer $\observer$. In a uniquely successful time slot $\slot$, $\party$ produces at least one block, and by Lemma~\ref{lem:unique_succ}, all the blocks that $\party$ produces during $\slot$ will be included in the chain output by the observer. Therefore, for all random coins $\msgOutputSet_{\party,\execution_{\profile_\proto}}\geq X_{\party,\execution_{\profile_\proto}}$ and so it holds that:
+\begin{equation}\label{eq:lower_bound}
+    E\big[\msgOutputSet_{\party,\execution_{\profile_\proto}}\big]\geq E\big[X_{\party,\execution_{\profile_\proto}}\big]=N\Big((1-\delta)^{(1-\mu_{\party}) q}-(1-\delta)^q\Big)\;.
+\end{equation}
+
+Now assume that $\party$ decides to unilaterally deviate from the protocol, following a strategy $S$. Let $\profile$ denote the respective strategy profile.
+    Let $Z_{\party,\execution_\profile}$ be the number of blocks that $\party$ produces by following $S$ and $\msgOutputSet_{\party,\execution_\profile}$ be the number of blocks produced by $\party$ that will be included in the chain output by $\observer$. Clearly, for all random coins $\msgOutputSet_{\party,\execution_\profile}\leq Z_{\party,\execution_\profile}$. Without loss of generality, we may assume that $\party$ makes all of their $N\mu_{\party} q$ available oracle queries (indeed, if $\party$ made less than $N\mu_{\party} q$ queries then on average it would produce less blocks). Thus, we observe that $Z_{\party,\execution_\profile}$ follows the binomial distribution with $N\mu_{\party} q$ trials and probability of success $\delta$. Thus:
+\begin{equation}\label{eq:upper_bound}
+    E\big[\msgOutputSet_{\party,\execution_\profile}\big]\leq\big[Z_{\party,\execution_{\profile}}\big]=N\mu_{\party} q\delta\;.
+\end{equation}
+
+    By definition of $\utility_{\party}$ in Eq.~\eqref{eq:bitcoin_utility} and Eq.~\eqref{eq:lower_bound} and~\eqref{eq:upper_bound}, for fixed block rewards $R$ and for every strategy $S$ that $\party$ may follow, we have:
+\begin{equation}\label{eq:upper-lower}
+\begin{split}
+    \utility_{\party}(\profile)&-\utility_{\party}(\profile_\proto)=E\big[\msgOutputSet_{\party,\execution_\profile}\big]\cdot R-E\big[\msgOutputSet_{\party,\execution_{\profile_\proto}}\big]\cdot R\leq\\
+    &\leq N\mu_{\party} q\delta R- N\Big((1-\delta)^{(1-\mu_{\party}) q}-(1-\delta)^q\Big)R\;.
+\end{split}
+\end{equation}
+By Bernoulli's inequality, we have that:
+    $(1-\delta)^{(1-\mu_{\party}) q}\geq1-(1-\mu_{\party}) q\delta$.
+Besides, by binomial expansion, and the assumption that $\delta\cdot q<1$ we have that:
+$(1-\delta)^q\leq1-q\delta+\frac{q^2}{2}\delta^2$.
+Thus, by applying the two above inequalities in Eq.~\eqref{eq:upper-lower}, we get that:
+\begin{equation}\label{eq:btc_approx}
+\begin{split}
+    &\utility_{\party}(\profile)-\utility_{\party}(\profile_\proto)\leq N\mu_{\party} q\delta R- N\Big((1-\delta)^{(1-\mu_{\party}) q}-(1-\delta)^q\Big)R\leq\\
+    \leq&N\mu_{\party} q\delta R- N\Big(1-(1-\mu_{\party}) q\delta-\Big(1-q\delta+\frac{q^2}{2}\delta^2\Big)\Big)R=\\
+    =&N\mu_{\party} q\delta R-N\Big(\mu_{\party} q\delta-\frac{q^2}{2}\delta^2\Big)R= \frac{NRq^2}{2}\delta^2
+\end{split}
+\end{equation}
+
+By Eq.~\eqref{eq:btc_approx}, Bitcoin is an $\epsilon$-Nash equilibrium for $\epsilon:=\frac{NRq^2}{2}\delta^2$.
+\end{proof}
+
+The result of Theorem~\ref{thm:bitcoin_eq_approx} shows that Bitcoin \wrt
+rewards is compliant, by proving that it is an approximate Nash equilibrium.
+This is in agreement with previous
+results~\cite{KrollDaveyFeltenWEIS2013,kiayias2019coalitionsafe}. Similar results
+exist for Bitcoin \wrt profit~\cite{EC:BGMTZ18,kiayias2019coalitionsafe},
+therefore compliance results for this utility are expected to also be achievable.
+
+\begin{remark*}
+A well-known result from the Selfish Mining
+attack~\cite{FC:EyaSir14,FC:SapSomZoh16} is that Bitcoin is not an equilibrium
+with respect to relative rewards. Therefore, we stress that the above analysis
+concerns the utility of \emph{absolute} rewards, although evaluating compliance
+under relative rewards is an interesting open question.
+\end{remark*}

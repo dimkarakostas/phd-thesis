@@ -1,0 +1,66 @@
+\subsection{Utility: Rewards and Costs}\label{sec:blockchain-utility}
+
+For each execution, the blockchain protocol defines a number of total rewards,
+which are distributed among the participating parties. For each party $\party$,
+these rewards are expressed via the \emph{reward random variable}
+$\reward_{\party, \execution}$.  For a specific trace $\executionTrace$, the
+random variable takes a non-negative real value, denoted by $\reward_{\party,
+\executionTrace}$. Intuitively, $\reward_{\party, \executionTrace}$ describes
+the rewards that $\party$ receives from the protocol from the point of view of
+the observer $\observer$, \ie \wrt the blocks accepted by
+$\observer$.
+
+Our analysis restricts to systems where rewards are distributed to parties if
+and only if the genesis block is extended by at least one block during the
+execution, in which case at least one party receives a non-negative amount of
+rewards (Assumption~\ref{ass:reward-distribution}).
+
+\begin{assumption}\label{ass:reward-distribution}
+    Let $\executionTrace$ be an execution trace. If no block is produced during $\executionTrace$, then it
+    holds that $\forall \party \in \partySet: \reward_{\party, \executionTrace} =
+    0$.
+    If at least one block is produced during $\executionTrace$, then it
+    holds that $\exists \party \in \partySet: \reward_{\party, \executionTrace} \neq
+    0$.
+\end{assumption}
+
+In addition to rewards, a party's utility is affected by cost. Specifically,
+the \emph{cost random variable} $\cost_{\party, \execution}$ expresses the
+operational cost that $\party$ during an execution $\execution$. For a fixed
+trace $\executionTrace$, $\cost_{\party, \executionTrace}$ is a non-negative
+real value. Our analysis is restricted to cost schemes which are \emph{linearly
+monotonically increasing} in the number of queries that a party makes to the
+oracle $\oracle_\proto$, with no queries incurring zero cost
+(Assumption~\ref{ass:zero-cost}). Intuitively, this assumption considers the
+electricity cost of participation, while the cost of equipment and other
+operations, such as parsing or publishing messages, is zero.
+
+\begin{assumption}\label{ass:zero-cost}
+    For every execution trace $\executionTrace$, a party $\party$'s cost is
+    $\cost_{\party, \executionTrace} = 0$ if and only if it performs no queries
+    to $\oracle_\proto$ in every time slot. Else, if during $\executionTrace$ a party $\party$ performs
+    $t$ queries, then its cost is $\cost_{\party, \executionTrace} = t \cdot \queryCost$, for some fixed parameter $\queryCost$.
+\end{assumption}
+
+Next, we define two types of utility. The first type, \emph{Reward}, considers
+the expected rewards that a party receives when the cost is near $0$, while the
+second type, \emph{Profit}, considers rewards minus participation cost.
+
+\begin{definition}\label{def:utility}
+    Let $\profile$ be a strategy profile and $\execution_\profile$ be an
+    execution during which parties follow $\profile$. We define two types of
+    blockchain utility $\utility_{\party}$ of a party $\party$ for $\profile$:
+    \begin{enumerate}
+        \item \emph{Reward}: $\utility_{\party}(\profile) = E[\reward_{\party, \execution_\profile}]$
+        \item \emph{Profit}: $\utility_{\party}(\profile) = E[\reward_{\party, \execution_\profile}] - E[\cost_{\party, \execution_\profile}]$
+    \end{enumerate}
+\end{definition}
+
+For the computation of $\utility_{\party}$, the
+environment $\env$ is fixed, while the
+expectation of the random variables $\reward_{\party, \execution_\profile}$
+and $\cost_{\party, \execution_\profile}$ is computed over the random coins of $\env$, $\oracle_\proto$, and every party $\party \in \partySet$.\smallskip
+
+In the following sections, we evaluate the compliance of various Proof-of-Work (PoW) and Proof-of-Stake (PoS)
+blockchain protocols \wrt two types of rewards, \emph{fair} and
+\emph{block-proportional}.

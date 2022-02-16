@@ -1,0 +1,34 @@
+\subsection*{Future Work}
+
+Throughout this thesis, multiple research questions arose, paving the way for
+interesting future directions. The model of Chapter~\ref{chap:hardware-wallets}
+highlighted the need for the operator of a hardware wallet to faithfully follow
+the prescribed protocol; future work could evaluate the error probability,
+identify the causes of mistakes, and propose techniques to reduce such risk.
+Building on the results of Chapter~\ref{chap:delegation}, future work could
+explore efficient (\ie short) non-malleable address schemes, as well as explore
+the implications of incorporating higher levels of anonymity and privacy. The
+collective stake pool of Chapter~\ref{chap:collective-pools} currently requires
+closing and re-creating a pool, in order to update its parameters and add new
+members; a more efficient design could expand this scheme to enable such
+changes in a dynamic manner. The analysis of Chapter~\ref{chap:utxo-growth} is
+focused on UTxO-based ledgers and size (as a cost function); future research
+could propose an adapted state efficiency framework, which incorporates
+account-based ledgers and explores its behavior under varying cost models. In
+Chapter~\ref{chap:compliance}, we consider only two
+infraction predicates and rewards that stem only from the system itself;
+future work could explore alternative infraction predicates, \eg to take into account selfish mining,
+how reward transfers between parties may affect the compliance analysis, as
+well as possible correlations between the exchange rate and protocol rewards,
+to produce an analysis for settings closer to the real-world. The
+crypto-egalitarianism property of Section~\ref{sec:egalitarianism} is defined
+over the, rather simplistic, economic model of Bitcoin (and its disciples);
+further research is needed, both to evaluate various existing systems and
+identify whether economies of scale in various parameters
+exacerbate the identified gap between PoW and PoS. Finally,
+Section~\ref{sec:taxation} offered a glimpse of how ledgers can
+solve real-world problems that tax authorities face; further research could
+enable collaboration between tax authorities of different
+countries, incorporate tax gap identification mechanisms in
+anonymous ledgers, and offer incentives to motivate
+adoption, instead of depending on law enforcement.

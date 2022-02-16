@@ -1,0 +1,193 @@
+\subsection*{From a Digital Fortress to a Brave New World}
+In the course of human history, many devices vie for the title of ``first
+computer''. The abacuses of ancient Babylonia and Greece and the Antikythera
+mechanism are some primitive examples, while Charles
+Babbage's Analytical Engine is typically hailed as the first mechanical
+computer. The first design of a \emph{modern} computer was given by Alan
+Turing~\cite{turing1937computable}, with two marvelous machines paving the way:
+ENIAC and the Manchester Baby, the first Turing-complete and
+stored-program computers respectively.
+
+In the $30$-odd years following the publication of Turing's pioneering work, computers
+became smaller, more efficient, and more versatile. A major breakthrough came
+in the $1960$s with the usage of direct-access storage, like magnetic disks,
+which resulted in the introduction of \emph{databases}. This new technology
+enabled a more flexible, shared, and interactive storage and processing of
+information. Following, a rich body of literature focused on designing database
+standards and applications, like the navigational and relational database
+management systems and the SQL.  Nonetheless, a ubiquitous element of this era
+was the centralized operation of database systems. From shared-time servers to
+personal computers, the designs assumed a single entity with complete control
+on data management. However, soon a need emerged to perform correctly in the
+presence of faults, be it benign, such as hardware failures, or malicious, such
+as bad actors trying to undermine the system.
+
+The work of Lamport, Shostak, and Pease during the early '$80$s introduced the
+consensus problem to the world~\cite{pease1980reaching,lamport1982byzantine}.
+As the title of their seminal paper suggests, their work considered a set of
+computers that should reach agreement, on the content of the information shared
+and the operations performed, in the presence of faults. To this day, the
+following beautiful analogy of the Byzantine generals, devised in that initial
+work, remains the best way to describe the consensus problem.
+
+Imagine a group of generals of the Byzantine army, who siege a city and must
+decide whether to attack at a pre-defined time. Some generals might prefer to
+attack, others may not. Crucially, all generals should agree on a common
+decision, for divided troops are bound to be defeated; thus, splitting the
+forces is far worse than either attacking or retreating in a coordinated
+manner. The decision is made via remote voting, as the generals cannot meet in
+person. However, there is a caveat. Some generals may have defected to the
+enemy, so they might vote for a suboptimal strategy or, more importantly,
+vote selectively. For example, if the group consists of $5$ generals, $2$
+of which are in favor of attacking while $2$ are against, the fifth ---
+corrupted --- general may send an ``attack'' vote to the former and a
+``retreat'' vote to the latter; as a result, the four --- honest --- generals
+would split. Even worse, since the generals are physically separated and
+deliver their votes via messengers, it is possible that some messages are
+delayed or even fail to be delivered.
+
+In distributed computing, processors take the place of generals and networks
+take the place of messengers. The system's designer defines a protocol $\proto$
+such that, if a processor $\party$ that follows $\proto$ outputs a value $x$,
+then every other processor that follows $\proto$ also outputs $x$. A well-known
+impossibility result showed that, if more than half of the processors are faulty,
+no protocol can solve the consensus problem. Subsequently, various protocols
+were proposed as solutions, each achieving different complexity bounds under
+various network assumptions~\cite{RSA:GarKia20}. Nonetheless, all of these
+protocols were \emph{federated}, thus restricting how many and which parties
+could participate. Without such restriction, it was unclear how an attacker
+could be prevented from mounting a \emph{Sybil attack}, \ie create a
+multitude of fake identities to gain an artificial majority.
+
+$30$ years later came Bitcoin~\cite{nakamoto2008bitcoin}, which introduced
+``Nakamoto consensus''. The major achievement of Bitcoin is
+solving~\cite{EC:GarKiaLeo15} the consensus problem in a completely open
+manner, \ie without any restriction on who can participate when. It achieved
+this by combining two pre-existing elements,
+\begin{inparaenum}[(a)]
+    \item a linked chain of data,
+    \item Proof-of-Work (PoW),
+\end{inparaenum}
+resulting in a protocol whose quality was higher than the sum of its parts.
+
+The former, which has since been dubbed a ``blockchain'', is a special
+database, which consists of an append-only log of data chunks (``blocks''). In
+this database, nothing gets deleted, \ie a party can only add information, and, at any
+point in time, each processor outputs an ordered log of published data.
+
+The latter (PoW) is a cryptographic mechanism, via which a party proves to
+others that it has performed a certain amount of computational effort.
+Invented by Dwork and Naor~\cite{C:DwoNao92} and formalized (and christened) by
+Jakobsson and Juels~\cite{jakobsson1999proofs}, PoW was originally proposed as
+a deterrent against Denial-of-Service (DoS) attacks and email spamming.
+However, Bitcoin's designer(s) repurposed it to counter sybil attacks. In the
+new setting, each unit of computational power is an individual party and, to
+gain a majority (and break the system), an attacker should possess more
+computational power than all honest participants \emph{combined}.
+
+With this new protocol an evolution had occurred, from centrally-controlled
+computer systems to completely open ones, much like the evolution described in
+the beginning of this chapter. Now, one could design an application that
+retains as high a degree of decentralization as one could hope for. However,
+an issue still remained. PoW requires from each party to repeatedly perform a simple
+task (see Section~\ref{sec:bitcoin-preliminaries} below). Still, simple as it
+is, each computation consumes some amount of energy. To perform millions,
+trillions, or more such computations per second comes at great cost, that is the consumption of significant amounts
+of energy. So, what kind of application could be built on this
+new paradigm and why would people care to pay the price of the costly PoW
+algorithm?
+
+\subsection*{Freakonomics}
+To answer this question, Bitcoin's designers turned to classical economics,
+particularly the concept of \emph{utilitarianism}. This notion came to
+prominence by Jeremy Bentham who, in his classic ``Introduction to the
+Principles of Morals and Legislation'', defined utility as ``that property in
+any object, whereby it tends to produce benefit, advantage, pleasure, good, or
+happiness''~\cite{bentham1970introduction}. Based on this idea, late $19$th
+century economists devised the image of \emph{Homo
+Economicus}~\cite{pareto1971manual}, a being that consistently acts rationally
+and optimally, in order to increase its self-centered utility. People,
+Bitcoin's designers argued, are driven by the pursuit of wealth. Therefore, to
+convince them to participate in this new system, they should be compensated.
+Consequently, the first application to be built on this new paradigm was a
+financial one: the Bitcoin cryptocurrency (BTC).
+
+Bitcoin is undoubtedly a product of its era. Although the real identity of
+Satoshi Nakamoto, its creator(s), remains unknown to this day, we can safely
+assume that, by $2008$, they were at least in their early $20$'s. Therefore,
+they grew up in, and were nurtured by, the globalized, financial, neoliberal
+capitalism. The platform on which Bitcoin's design was initially published, an
+online cryptography mailing
+list~\cite{nakamoto2008mail}, suggests that Nakamoto were part of the discussion on
+Internet civil liberties and its culmination in the ``cypherpunk''
+movement~\cite{greenberg2012machine,levy2001crypto,assange2012cypherpunks,manne2011cypherpunk}.
+Hence, individual liberty against an oppressive state became the compass of
+Bitcoin's existence~\cite{golumbia2016politics}:
+\begin{inparaenum}[i)]
+    \item on the computer science side, Bitcoin was designed as a global,
+        censorship-resistant system, that can withstand attacks from any single
+        entity with less power than the aggregate power of its participants;
+    \item on the economics side, it was based on the ideas of the Austrian
+        School and the ideal of the gold standard, arguing for deflation and
+        algorithmically-controlled, a-political money.
+\end{inparaenum}
+
+As a result, the novel blockchain-based paradigm was used as the database of a
+financial system with the following characteristics. The blockchain acts as a
+log of monetary transactions. The unit of transactions is a new currency, the
+Bitcoin (BTC). The parties that maintain the blockchain are called ``miners''
+(in a not at all subtle nod to the gold standard). For each block that a miner
+$\party$ adds to the blockchain, $\party$ is rewarded with a certain amount of
+newly-issued BTC. The total amount of BTC in circulation is capped, converging
+over time to $21$ million. To transact with BTC, the sender pays some fees,
+which are awarded to the miner that includes the transaction in their created
+block.
+
+Bitcoin's economic design has various interesting implications. The first type
+of rewards, newly-issued coins, deteriorates significantly over time, thus
+giving a disproportionate advantage to early participants.  Additionally, it
+incentivizes miners to keep producing blocks, even if nobody uses it (as is
+typically the case with new systems). The second type, transaction fees,
+incentivizes miners to include as many transactions as possible to their
+blocks. However, Bitcoin restricts the size of each block to $1$MB. This bound
+creates a competitive market for space in each block, between miners (\ie
+``sellers'' of the space) and users (\ie ``buyers''). Consequently, if adoption
+of the system increases and more transactions are performed, users ``compete''
+for the (limited) block space, so the fees increase and the miners are
+compensated more generously. Finally, if more people were to use the system for
+monetary transactions, that is if a Bitcoin-based economy of goods developed,
+the upper-bound of $21$ million would enforce deflation, as each product would
+cost less in BTC (conversely, each BTC would be worth more). As a result, the
+system encourages people to hoard BTC, rather than transact with them.
+
+During the first $11$ years of Bitcoin's existence, these implications often
+manifested in practice in spectacular fashion. Bitcoin was initially
+presented as a cheap method of transacting, often compared to overseas
+wire transfers. Indeed, for the greater part of this period, a single
+transaction's fees averaged a few USD cents~\cite{bitcoin-fees-historical}.
+However, during periods of intense use, when many users tried to transact as
+fast as possible, the average fees increased to as much as
+\$$60$. As Bitcoin gained fame (and notoriety),
+its price increased, at times in clear bubble-like rate. However, even at
+the peak of its mainstream adoption, as few as $2160$ entities (represented by
+unique addresses on Bitcoin's ledger) controlled $42.17$\% \emph{of the total
+BTC in circulation}~\cite{bitcoin-rich-list}, a level of wealth centralization
+unprecedented in real-world economies. Consequently, almost all of Bitcoin's
+usage thus far has been in:
+\begin{inparaenum}[i)]
+    \item savings and financial speculation (due to its deflationary nature), or
+    \item illegal trades (due to its censorship resistance)~\cite{gerard2017attack}.
+\end{inparaenum}
+
+More importantly, Bitcoin is quickly turning into an environmental disaster.
+As BTC's price increased, partially due to widespread and questionable
+speculation~\cite{griffin2020bitcoin}, more people would join the (profitable)
+mining business. As more and more people started mining, the network's
+aggregate PoW computations, and the total energy consumed by the system,
+increased. Since the end of $2017$, when BTC's price bubbled to thousands of
+USD, Bitcoin's energy consumption has reached ridiculous levels. In an era
+when the planet is \emph{on fire}~\cite{klein2020fire}, the carbon footprint of
+Bitcoin is comparable to that of the Republic of Serbia, the CO$_2$ emissions
+of processing \emph{a single Bitcoin transaction} are equivalent to processing
+$1,808,913$ VISA transactions, and the energy corresponding to this single
+transaction could power a USA household for $58$ days~\cite{pow-energy}.

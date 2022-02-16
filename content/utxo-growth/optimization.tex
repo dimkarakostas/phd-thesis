@@ -1,0 +1,72 @@
+\section{Transaction Optimization}\label{sec:tx_optimization}
+
+The purpose of a distributed ledger is to execute payments, \ie transfer value
+from one party to another via transactions.  Multiple transactions can perform
+the same transfer of value between two parties. Such transactions are
+\emph{equivalent} in terms of their final result, \ie transferring some value
+between parties A and B, but may vary in their cost to the ledger state.
+\emph{Transaction optimization} is the problem of finding the equivalent
+transaction with minimum cost; our work is heavily inspired by the seminal
+research on database query optimization \cite{ioannidis}.
+
+The cost difference between equivalent transactions may be significant.
+For example, assume that Alice wants to give Bob $100$ coins and owns a UTxO of
+$100$ coins and $100$ UTxOs of $1$ coin each. Consider the two equivalent
+plans:
+\begin{inparaenum}[1)]
+    \item Alice spends the single UTxO of value $100$ and
+        creates $100$ outputs of value $1$ for Bob;
+    \item Alice spends the $100$ UTxOs of $1$ coin value and
+        defines a single UTxO of value $100$ to transfer to Bob.
+\end{inparaenum}
+The cost of the two approaches exemplifies the ledger state impact that
+equivalent transactions may have. The first plan increases the ledger's state
+by $99$ UTxOs, while the second decreases it by the same amount.
+
+Following, we use the terms plan and transaction interchangeably, \ie an
+alternative plan that achieves the same goal is expressed as an alternative,
+equivalent transaction. Definition~\ref{def:equiv_txs} describes transaction
+equivalency, while Definition~\ref{def:equiv_total_orders_of_txs} defines
+equivalency between two ordered lists of transactions.
+
+\begin{definition}\label{def:equiv_txs}
+    Transactions $\tx_1, \tx_2$ are equivalent (denoted $\tx_1
+    \equiv \tx_2$) if, when applied to the same state $\ledgerState_A$
+    of a ledger $\ledger$, they result in states $\ledgerState_1$ and
+    $\ledgerState_2$ respectively, with the same total accumulated value per unique
+    address $\addr$:
+    \[
+    \forall \addr \in A
+        \sum_{\substack{i \in \ledgerState_1 \\ o_i = \utxo(i, \ledger) \\
+        o_i.\mathit{address} =
+        \addr }}^{} o_i.\mathit{value} =
+        \sum_{\substack{ j \in \ledgerState_2 \\ o_j = \utxo(j, \ledger) \\
+        o_j.\mathit{address} =
+        \addr }}^{} o_j.\mathit{value}
+    \]
+    where $A$ is the set of all addresses of the parties participating in the
+    ledger system.
+\end{definition}
+
+\begin{definition}\label{def:equiv_total_orders_of_txs}
+    Two different totally ordered sets of the same $N$ transactions $[T_i]$ and
+    $[T_j]$ are equivalent (denoted as $[T_i]
+    \equiv [T_j]$) if, when applied to the same ledger state $\ledgerState_A$
+    of a ledger $\ledger$, they result in states $\ledgerState_1$ and
+    $\ledgerState_2$ respectively, where the total accumulated value per unique
+    address $\addr$ is the same in both states:
+    \[
+    \forall \addr \in A
+    \sum_{\substack{i \in \ledgerState_1 \\ o_i = \utxo(i, \ledger) \\
+        o_i.\mathit{address} =
+        \addr }}^{} o_i.\mathit{value} =
+    \sum_{\substack{ j \in \ledgerState_2 \\ o_j = \utxo(j, \ledger) \\
+        o_j.\mathit{address} =
+        \addr }}^{} o_j.\mathit{value}
+    \]
+    where $A$ is the set of addresses of all participants in the distributed
+    ledger system.
+\end{definition}
+
+Following, we define the basic logical operators for expressing a transaction
+and explore optimization techniques for compiling the optimal transaction plan.
