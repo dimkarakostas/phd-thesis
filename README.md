@@ -3,6 +3,9 @@ Management over Distributed Ledgers". It is advised by Prof. Aggelos Kiayias at
 the Cryptography and Security Lab of the School of Informatics at the University
 of Edinburgh.
 
+The pdf is available at
+[dimkarakostas.com/thesis.pdf](https://dimkarakostas.com/thesis.pdf).
+
 ## Building
 
 Install `xelatex` and `bibtex` on your system and run `make` inside the root
